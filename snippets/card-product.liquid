@@ -157,8 +157,16 @@
           assign fabric_label = card_product.metafields.custom.fabric.value
         elsif card_product.metafields.custom.material != blank
           assign fabric_label = card_product.metafields.custom.material.value
-        elsif card_product.type != blank
-          assign fabric_label = card_product.type
+        elsif card_product.metafields.custom.fabric_composition != blank
+          assign fabric_label = card_product.metafields.custom.fabric_composition.value
+        else
+          for card_tag in card_product.tags
+            assign tag_lc = card_tag | downcase
+            if tag_lc contains 'fabric:'
+              assign fabric_label = card_tag | split: ':' | last | strip
+              break
+            endif
+          endfor
         endif
 
         assign has_size_option = false

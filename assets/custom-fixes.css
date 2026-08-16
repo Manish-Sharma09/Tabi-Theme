@@ -426,44 +426,54 @@ script.card-gallery-data {
   visibility: hidden;
 }
 
-.card-slider__nav {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3;
+/* The controls wrapper is mounted on .card__inner, NOT inside .card__media.
+   Dawn gives .card__media `z-index: 0` while `.ratio > *` makes it
+   position:absolute — that combination creates a stacking context, which
+   trapped the arrows underneath the stretched card link (z-index: 1) and made
+   every arrow click open the product page. On .card__inner they share the
+   link's stacking context, so z-index actually decides the winner.
+   `.ratio > *` supplies the absolute full-bleed box for free. */
+.card-slider__controls {
+  z-index: 4;
   display: none;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 0.8rem;
+  pointer-events: none;
+}
+
+.card-slider__nav {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
   justify-content: center;
-  width: 3.2rem;
-  height: 3.2rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  flex: 0 0 auto;
   padding: 0;
   border: 0;
   border-radius: 50%;
   cursor: pointer;
   pointer-events: auto;
-  background: rgba(var(--color-background), 0.88);
+  background: rgba(var(--color-background), 0.9);
   color: rgb(var(--color-foreground));
-  box-shadow: 0 1px 6px rgba(var(--color-shadow), 0.2);
+  box-shadow: 0 1px 6px rgba(var(--color-shadow), 0.22);
   opacity: 0;
   transition: opacity 0.18s ease, background-color 0.18s ease;
-}
-
-.card-slider__nav--prev {
-  left: 0.8rem;
-}
-
-.card-slider__nav--next {
-  right: 0.8rem;
 }
 
 .card-slider__nav svg {
   width: 1.1rem;
   height: 1.1rem;
+  pointer-events: none;
 }
 
-/* Arrows are a pointer-device affordance only — touch devices keep autoplay. */
-@media (hover: hover) and (pointer: fine) {
-  .card-wrapper.has-slider .card-slider__nav {
+/* Desktop = manual arrows, mobile = autoplay. Keyed to viewport width so it
+   matches the JS, which had been using `(hover: hover) and (pointer: fine)` —
+   that reports false on touchscreen laptops, so autoplay kept running. */
+@media screen and (min-width: 750px) {
+  .card-wrapper.has-slider .card-slider__controls {
     display: flex;
   }
 
@@ -475,10 +485,17 @@ script.card-gallery-data {
   .card-slider__nav:hover {
     background: rgb(var(--color-background));
   }
+
+  .card-slider__nav:focus-visible {
+    opacity: 1;
+    outline: 0.2rem solid rgb(var(--color-foreground));
+    outline-offset: 0.2rem;
+  }
 }
 
 .card-slider__dots {
   position: absolute;
+  pointer-events: none;
   left: 0;
   right: 0;
   bottom: 0.8rem;
@@ -529,30 +546,79 @@ script.card-gallery-data {
    viewport while it is open and let it own its own scrolling.
    -------------------------------------------------------------------------- */
 
+/* --drawer-top is measured and written by custom-fixes.js on every open and
+   resize. Dawn's own --header-bottom-position can be 0 (transparent/absolute
+   headers, or a measurement taken before layout settles), and a 0 there meant
+   the drawer covered the header — including the X that closes it. */
 .section-header.menu-open .menu-drawer,
 .header-wrapper .menu-open .menu-drawer {
   position: fixed;
-  top: var(--header-bottom-position, 0px);
+  top: var(--drawer-top, var(--header-bottom-position, 5.6rem));
   left: 0;
   width: 100%;
-  height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
-  max-height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
+  height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
+  max-height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
 
-.section-header.menu-open menu-drawer > details[open] > summary::before {
+.section-header.menu-open menu-drawer > details[open] > summary::before,
+.section-header.menu-open header-drawer > details[open] > summary::before {
   position: fixed;
-  top: var(--header-bottom-position, 0px);
+  top: var(--drawer-top, var(--header-bottom-position, 5.6rem));
   left: 0;
   width: 100%;
-  height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
+  height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
 }
 
 /* Keep the header visible for as long as the drawer is open. */
 .section-header.menu-open {
   position: sticky;
   top: 0;
+}
+
+/* The header row must paint ABOVE the drawer (.menu-drawer is z-index 3), or
+   the drawer's own background hides the close control sitting in the header. */
+.section-header.menu-open .header,
+.section-header.menu-open .header-wrapper {
+  position: relative;
+  z-index: 6;
+}
+
+.section-header.menu-open .header {
+  background: rgb(var(--color-background));
+}
+
+/* --- Guaranteed close control, injected into the drawer by custom-fixes.js -- */
+.menu-drawer__dismiss {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.2rem 2rem;
+  border: 0;
+  border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.08);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  font-size: 1.2rem;
+  letter-spacing: 0.12rem;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.menu-drawer__dismiss:hover {
+  background: rgba(var(--color-foreground), 0.04);
+}
+
+.menu-drawer__dismiss .svg-wrapper,
+.menu-drawer__dismiss svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex: 0 0 auto;
 }
 
 /* --------------------------------------------------------------------------

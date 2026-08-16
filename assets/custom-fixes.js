@@ -18,9 +18,17 @@
   var reduceMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  var canHover =
-    window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
-  var autoplayEnabled = !reduceMotion && !canHover;
+  var DESKTOP_QUERY = '(min-width: 750px)';
+  var desktopMQ = window.matchMedia ? window.matchMedia(DESKTOP_QUERY) : null;
+
+  function isDesktop() {
+    return desktopMQ ? desktopMQ.matches : window.innerWidth >= 750;
+  }
+
+  function autoplayAllowed() {
+    // Desktop is manual-only (arrows). Touch/mobile autoplays.
+    return !reduceMotion && !isDesktop();
+  }
 
   var mounted = new WeakSet();
   var sliderObserver = null;
@@ -119,9 +127,23 @@
     slider.appendChild(track);
     slider.appendChild(dots);
 
-    // Manual controls for pointer devices. Built for every card so a mouse
-    // plugged into a touch device still gets them, but only revealed by the
-    // `(hover: hover)` media query in CSS.
+    media.appendChild(slider);
+
+    /* ARROWS GO OUTSIDE .card__media ON PURPOSE.
+       Dawn sets `.card .card__inner .card__media { z-index: 0 }` (a Safari
+       border-bug fix) and `.ratio > *` makes it position:absolute. A positioned
+       element with z-index:0 creates a stacking context, so anything inside
+       .card__media is trapped below `.card__heading a::after` (z-index: 1) —
+       the stretched card link. That is why clicking an arrow opened the product
+       page. Mounting the controls on .card__inner instead puts them in the same
+       stacking context as the link overlay, where a higher z-index actually
+       wins. `.ratio > *` conveniently gives the wrapper absolute full-bleed
+       positioning for free. */
+    var host = card.querySelector('.card__inner') || media;
+
+    var controls = document.createElement('div');
+    controls.className = 'card-slider__controls';
+
     var prev = document.createElement('button');
     prev.type = 'button';
     prev.className = 'card-slider__nav card-slider__nav--prev';
@@ -134,21 +156,34 @@
     next.setAttribute('aria-label', 'Next image');
     next.innerHTML = ARROW_NEXT;
 
-    slider.appendChild(prev);
-    slider.appendChild(next);
-    media.appendChild(slider);
+    controls.appendChild(prev);
+    controls.appendChild(next);
+    host.appendChild(controls);
 
     function step(delta) {
       return function (event) {
         event.preventDefault();
         event.stopPropagation();
+        if (!card.__slider) return;
         pause(card.__slider, false);
         goTo(card.__slider, card.__slider.index + delta);
       };
     }
 
-    prev.addEventListener('click', step(-1));
-    next.addEventListener('click', step(1));
+    [prev, next].forEach(function (btn) {
+      btn.addEventListener('click', step(btn === prev ? -1 : 1));
+      // Stop the press reaching the card link before the click even resolves.
+      ['pointerdown', 'mousedown', 'touchstart'].forEach(function (evt) {
+        btn.addEventListener(
+          evt,
+          function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+          },
+          { passive: false }
+        );
+      });
+    });
 
     var state = {
       card: card,
@@ -174,7 +209,7 @@
 
   function play(state) {
     // Desktop is manual-only: arrows drive the slider, nothing moves on its own.
-    if (!autoplayEnabled) return;
+    if (!autoplayAllowed()) return;
     if (!state || state.timer || state.count < 2) return;
     state.timer = window.setInterval(function () {
       goTo(state, state.index + 1);
@@ -200,7 +235,7 @@
             // Mount either way so the arrows exist; play() no-ops on desktop.
             play(buildSlider(card));
           } else if (card.__slider) {
-            pause(card.__slider, autoplayEnabled);
+            pause(card.__slider, autoplayAllowed());
           }
         });
       },
@@ -228,16 +263,15 @@
       play(card.__slider);
     });
 
-    if (!canHover) {
-      card.addEventListener(
-        'touchstart',
-        function () {
-          var s = buildSlider(card);
-          if (s) goTo(s, s.index + 1);
-        },
-        { passive: true }
-      );
-    }
+    card.addEventListener(
+      'touchstart',
+      function () {
+        if (isDesktop()) return;
+        var s = buildSlider(card);
+        if (s) goTo(s, s.index + 1);
+      },
+      { passive: true }
+    );
   }
 
   /* ====================================================================== */
@@ -456,6 +490,99 @@
     );
   });
 
+
+  /* ====================================================================== */
+  /* C. MENU DRAWER — reliable close + correct top offset                    */
+  /* ====================================================================== */
+
+  var CLOSE_ICON =
+    '<svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M1 1l16 16M17 1L1 17" stroke="currentColor" stroke-width="1.4" ' +
+    'stroke-linecap="round"/></svg>';
+
+  function headerSection() {
+    return document.querySelector('.section-header');
+  }
+
+  /* Dawn writes --header-bottom-position from getBoundingClientRect().bottom,
+     which can come back 0 on a transparent/absolute header or before layout
+     settles. A 0 there put the drawer over the header and hid the X. Measure
+     it ourselves and publish --drawer-top. */
+  function syncDrawerTop() {
+    var header = headerSection();
+    if (!header) return;
+
+    var rect = header.getBoundingClientRect();
+    var top = Math.round(rect.bottom);
+
+    if (!top || top < 1) {
+      var inner = header.querySelector('.header');
+      top = inner ? Math.round(inner.getBoundingClientRect().height) : 0;
+    }
+    if (!top || top < 1) top = 56;
+
+    document.documentElement.style.setProperty('--drawer-top', top + 'px');
+    document.documentElement.style.setProperty('--viewport-height', window.innerHeight + 'px');
+  }
+
+  function closeDrawer(event) {
+    var drawer = document.querySelector('header-drawer');
+    if (!drawer) return;
+
+    var details = drawer.querySelector('#Details-menu-drawer-container') ||
+      drawer.querySelector('details');
+    var summary = details ? details.querySelector('summary') : null;
+
+    // Full teardown: removes .menu-opening, .menu-open and the body scroll
+    // lock. Calling closeSubmenu() alone would leave the page frozen.
+    if (typeof drawer.closeMenuDrawer === 'function' && summary) {
+      drawer.closeMenuDrawer(event || new Event('click'), summary);
+      return;
+    }
+    if (summary) summary.click();
+  }
+
+  function injectDrawerDismiss() {
+    var container = document.querySelector('header-drawer .menu-drawer__inner-container');
+    if (!container || container.querySelector('.menu-drawer__dismiss')) return;
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'menu-drawer__dismiss';
+    btn.setAttribute('aria-label', 'Close menu');
+    btn.innerHTML = '<span>Close</span><span class="svg-wrapper">' + CLOSE_ICON + '</span>';
+
+    btn.addEventListener('click', function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      closeDrawer(event);
+    });
+
+    container.insertBefore(btn, container.firstChild);
+  }
+
+  function watchDrawer() {
+    var header = headerSection();
+    if (!header) return;
+
+    syncDrawerTop();
+    injectDrawerDismiss();
+
+    // Re-measure the moment the drawer opens, after Dawn has done its own pass.
+    new MutationObserver(function () {
+      if (header.classList.contains('menu-open')) {
+        syncDrawerTop();
+        window.requestAnimationFrame(syncDrawerTop);
+        injectDrawerDismiss();
+      }
+    }).observe(header, { attributes: true, attributeFilter: ['class'] });
+
+    window.addEventListener('resize', syncDrawerTop);
+    window.addEventListener('orientationchange', function () {
+      window.setTimeout(syncDrawerTop, 150);
+    });
+  }
+
   /* ====================================================================== */
   /* INIT                                                                    */
   /* ====================================================================== */
@@ -467,9 +594,29 @@
     scope.querySelectorAll('.card-wrapper').forEach(setupInlineSizes);
   }
 
+  function onBreakpointChange() {
+    document.querySelectorAll(CARD_SELECTOR).forEach(function (card) {
+      if (!card.__slider) return;
+      if (autoplayAllowed()) {
+        play(card.__slider);
+      } else {
+        pause(card.__slider, false);
+      }
+    });
+  }
+
   function boot() {
     sliderObserver = createSliderObserver();
     init(document);
+    watchDrawer();
+
+    if (desktopMQ) {
+      if (desktopMQ.addEventListener) {
+        desktopMQ.addEventListener('change', onBreakpointChange);
+      } else if (desktopMQ.addListener) {
+        desktopMQ.addListener(onBreakpointChange);
+      }
+    }
   }
 
   if (document.readyState === 'loading') {
@@ -480,6 +627,7 @@
 
   document.addEventListener('shopify:section:load', function (event) {
     init(event.target || document);
+    watchDrawer();
   });
 
   // Collection filters / pagination replace the grid without a page load.

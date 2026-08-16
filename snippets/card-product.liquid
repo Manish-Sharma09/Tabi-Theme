@@ -161,15 +161,17 @@
           assign fabric_label = card_product.type
         endif
 
-        assign size_option_index = 0
-        assign colour_option_index = 0
+        assign has_size_option = false
+        assign has_colour_option = false
         for card_option in card_product.options_with_values
           assign option_name_lc = card_option.name | downcase
           if option_name_lc contains 'size'
-            assign size_option_index = forloop.index
+            assign size_option = card_option
+            assign has_size_option = true
           endif
           if option_name_lc contains 'color' or option_name_lc contains 'colour'
-            assign colour_option_index = forloop.index
+            assign colour_option = card_option
+            assign has_colour_option = true
           endif
         endfor
 
@@ -244,50 +246,34 @@
 
             {% render 'price', product: card_product, price_class: '', show_compare_at_price: true %}
 
-            {%- if size_option_index > 0 -%}
-              {%- assign size_option = card_product.options_with_values[size_option_index | minus: 1] -%}
-              <div
-                class="card__sizes{% if single_option %} card__sizes--interactive{% endif %}"
-                {% if single_option %}
-                  role="group" aria-label="{{ size_option.name | escape }}"
-                {% endif %}
-              >
-                {%- for size_value in size_option.values -%}
-                  {%- liquid
-                    assign size_variant = null
-                    assign size_available = false
-                    if single_option
-                      for candidate in card_product.variants
-                        if candidate.option1 == size_value
-                          assign size_variant = candidate
-                          assign size_available = candidate.available
-                          break
-                        endif
-                      endfor
-                    endif
-                  -%}
-                  {%- if single_option and size_variant -%}
+            {%- if has_size_option -%}
+              {%- if single_option -%}
+                <div class="card__sizes card__sizes--interactive" role="group">
+                  {%- for size_variant in card_product.variants -%}
                     <button
                       type="button"
                       class="card__size card__size--button"
                       data-variant-id="{{ size_variant.id }}"
-                      {% unless size_available %}
+                      {% unless size_variant.available %}
                         disabled aria-disabled="true"
                       {% endunless %}
-                      aria-label="{{ size_option.name | escape }} {{ size_value | escape }}"
+                      aria-label="{{ size_variant.title | escape }}"
                     >
-                      {{- size_value -}}
+                      {{- size_variant.option1 -}}
                     </button>
-                  {%- else -%}
+                  {%- endfor -%}
+                </div>
+                <p class="card__sizes-status" role="status" aria-live="polite"></p>
+              {%- else -%}
+                <div class="card__sizes">
+                  {%- for size_value in size_option.values -%}
                     <span class="card__size">{{ size_value }}</span>
-                  {%- endif -%}
-                {%- endfor -%}
-              </div>
-              <p class="card__sizes-status" role="status" aria-live="polite"></p>
+                  {%- endfor -%}
+                </div>
+              {%- endif -%}
             {%- endif -%}
 
-            {%- if colour_option_index > 0 -%}
-              {%- assign colour_option = card_product.options_with_values[colour_option_index | minus: 1] -%}
+            {%- if has_colour_option -%}
               <div class="card__swatches" aria-label="{{ colour_option.name | escape }}">
                 {%- for colour_value in colour_option.values -%}
                   <span

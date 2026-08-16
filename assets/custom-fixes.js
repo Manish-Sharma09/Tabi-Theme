@@ -130,15 +130,14 @@
     media.appendChild(slider);
 
     /* ARROWS GO OUTSIDE .card__media ON PURPOSE.
-       Dawn sets `.card .card__inner .card__media { z-index: 0 }` (a Safari
-       border-bug fix) and `.ratio > *` makes it position:absolute. A positioned
-       element with z-index:0 creates a stacking context, so anything inside
-       .card__media is trapped below `.card__heading a::after` (z-index: 1) —
-       the stretched card link. That is why clicking an arrow opened the product
-       page. Mounting the controls on .card__inner instead puts them in the same
-       stacking context as the link overlay, where a higher z-index actually
-       wins. `.ratio > *` conveniently gives the wrapper absolute full-bleed
-       positioning for free. */
+       `.ratio` is `display: flex`, so `.card__media` is a flex item — and a
+       flex item carrying `z-index: 0` (Dawn's Safari border fix) creates a
+       stacking context. Anything inside it is trapped below the stretched card
+       link at z-index 1, which is why arrow clicks opened the product page.
+       Mounting on `.card__inner` puts the controls in the same stacking context
+       as the link, where a higher z-index actually wins. The controls are
+       absolutely positioned in CSS so they do not become a flex sibling of the
+       image (that squashed the card). */
     var host = card.querySelector('.card__inner') || media;
 
     var controls = document.createElement('div');

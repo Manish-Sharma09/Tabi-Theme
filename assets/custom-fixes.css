@@ -426,14 +426,26 @@ script.card-gallery-data {
   visibility: hidden;
 }
 
-/* The controls wrapper is mounted on .card__inner, NOT inside .card__media.
-   Dawn gives .card__media `z-index: 0` while `.ratio > *` makes it
-   position:absolute — that combination creates a stacking context, which
-   trapped the arrows underneath the stretched card link (z-index: 1) and made
-   every arrow click open the product page. On .card__inner they share the
-   link's stacking context, so z-index actually decides the winner.
-   `.ratio > *` supplies the absolute full-bleed box for free. */
+/* Mounted on .card__inner, NOT inside .card__media.
+   Why outside: `.ratio` is `display: flex`, so .card__media is a flex item —
+   and a flex item with `z-index: 0` (Dawn's Safari border fix) creates a
+   stacking context. Anything inside it is trapped below the stretched card
+   link at z-index 1, which is why arrow clicks opened the product page.
+
+   Why `position: absolute` is spelled out here: `.card__inner.ratio` is also
+   a flex CONTAINER, and this version of Dawn has no `.ratio > *` rule to
+   absolutely position its children. Left in normal flow the controls became a
+   flex sibling of the image and squashed the whole card. Taking them out of
+   flow costs the layout nothing. */
 .card-slider__controls {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
   z-index: 4;
   display: none;
   align-items: center;
@@ -555,7 +567,9 @@ script.card-gallery-data {
   position: fixed;
   top: var(--drawer-top, var(--header-bottom-position, 5.6rem));
   left: 0;
-  width: 100%;
+  /* Width deliberately NOT set. menu_type_desktop is "drawer" on this store,
+     and Dawn sizes the panel to 40rem from 750px up (100% below that).
+     Forcing width: 100% here blew the desktop drawer across the whole screen. */
   height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
   max-height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
   overflow-y: auto;
@@ -720,6 +734,16 @@ table {
   #product-grid.product-grid {
     column-gap: 0.4rem;
     row-gap: 4rem;
+  }
+}
+
+/* Full-bleed is the look, but uncapped on an ultrawide monitor each card
+   becomes enormous. Cap the container without reintroducing side gutters. */
+@media screen and (min-width: 1800px) {
+  .collection.page-width {
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 

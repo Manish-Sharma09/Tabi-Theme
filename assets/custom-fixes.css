@@ -768,12 +768,23 @@ table {
 }
 
 /* --- Size row ------------------------------------------------------------ */
+/* MUST be positioned with a z-index above the card link overlay (z-index: 1),
+   otherwise the stretched <a>::after covers the chips and every click
+   navigates to the product page instead of adding the size to the bag. */
 .card__sizes {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.9rem;
   margin-bottom: 0.9rem;
+}
+
+.card__sizes-status,
+.card__swatches {
+  position: relative;
+  z-index: 2;
 }
 
 .card__size {
@@ -791,6 +802,19 @@ table {
   cursor: pointer;
   transition: color 0.12s ease, opacity 0.12s ease;
   position: relative;
+  z-index: 1;
+  /* Comfortable tap target without changing the visual size. */
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card__size--button.is-added {
+  color: rgb(var(--color-foreground));
+  text-decoration: underline;
+  text-underline-offset: 0.3rem;
 }
 
 .card__size--button:hover:not([disabled]) {
@@ -855,6 +879,59 @@ table {
   background: rgb(var(--color-background));
   color: rgb(var(--color-foreground));
   border-radius: 0;
+}
+
+/* ==========================================================================
+   10. PRODUCT DETAIL PAGE — media sizing
+   The template ships `constrain_to_viewport: false`, which lets a tall product
+   photo render at full natural height on a phone. Constrain it and stop the
+   mobile gallery slider bleeding past the viewport.
+   ========================================================================== */
+
+.product__media-wrapper,
+.product__media-list,
+.product__media-item {
+  max-width: 100%;
+}
+
+.product__media img,
+.product__media .media img {
+  max-width: 100%;
+  height: auto;
+}
+
+@media screen and (max-width: 749px) {
+  .product__media-wrapper {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .product__media-list {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .product--large .product__media-wrapper,
+  .product__media-wrapper .product-media-container {
+    max-height: 78vh;
+  }
+
+  .product__media-item .product-media-container .media {
+    max-height: 78vh;
+  }
+
+  .product__media-item img {
+    max-height: 78vh;
+    object-fit: contain;
+  }
+
+  /* Lightbox trigger sometimes rendered outside the media box. */
+  .product__modal-opener .product__media-zoom-lightbox,
+  .product__media-zoom-lightbox {
+    top: 1rem;
+    left: 1rem;
+    right: auto;
+  }
 }
 
 /* --------------------------------------------------------------------------

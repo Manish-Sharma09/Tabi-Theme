@@ -1489,7 +1489,7 @@ a.cstm-header-con {
    promotes the hamburger / search / cart to direct flex children of `.header`,
    which is what allows ordering them without a wrapper.
 ======================================== */
-@media (max-width: 580px) {
+@media (max-width: 989px) {
   header.header.page-width,
   header.header.header--middle-left.header--mobile-center.page-width.header--has-menu.header--has-social.header--has-account {
     display: flex;
@@ -1548,6 +1548,24 @@ a.cstm-header-con {
   header.header.page-width .header__icons {
     order: 5;
     flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-self: end;
+    margin-left: 0;
+  }
+
+  /* Search before cart, both hard right. */
+  header.header.page-width .header__icons .search_desktop_icon {
+    order: 1;
+  }
+
+  header.header.page-width .header__icons #cart-icon-bubble {
+    order: 2;
+  }
+
+  header.header.page-width .header__icons .header__icon--account,
+  header.header.page-width .header__icons localization-form {
+    order: 0;
   }
 
   /* The search modal spans the header, not just the icon that opens it. */

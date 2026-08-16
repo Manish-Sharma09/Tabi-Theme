@@ -260,6 +260,7 @@
   }
 
   function setStatus(popup, message, state) {
+    if (!popup || !popup.querySelector) return;
     var el = popup.querySelector('.card-sizes__status, .card__sizes-status');
     if (!el) return;
     el.textContent = message || '';
@@ -310,6 +311,7 @@
   }
 
   function addToCart(variantId, button, popup) {
+    if (!variantId) return Promise.resolve();
     button.classList.add('is-loading');
     setStatus(popup, '');
 
@@ -361,14 +363,29 @@
     group.__bound = true;
 
     var status = card.querySelector('.card__sizes-status');
-    var host = status ? status.parentNode : card;
+    var host = status && status.parentNode ? status.parentNode : card;
 
     group.querySelectorAll('.card__size--button').forEach(function (chip) {
-      chip.addEventListener('click', function (event) {
+      var handler = function (event) {
         event.preventDefault();
         event.stopPropagation();
-        if (chip.disabled) return;
-        addToCart(chip.getAttribute('data-variant-id'), chip, host);
+        if (chip.disabled || chip.classList.contains('is-loading')) return;
+
+        var variantId = chip.getAttribute('data-variant-id');
+        if (!variantId) return;
+
+        addToCart(variantId, chip, host).then(function () {
+          chip.classList.add('is-added');
+          window.setTimeout(function () {
+            chip.classList.remove('is-added');
+          }, 1400);
+        });
+      };
+
+      // Capture the press early so the stretched card link never wins the tap.
+      chip.addEventListener('click', handler);
+      chip.addEventListener('pointerdown', function (event) {
+        event.stopPropagation();
       });
     });
   }

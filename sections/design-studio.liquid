@@ -1,0 +1,278 @@
+<div class="page-width section-{{ section.id }}-padding image-with-video-section" >
+  <div class="mobile-section-header">
+      <h2 class="image-with-text__heading inline-richtext h2">THE DESIGN STUDIO</h2>
+      <div class="subtitle">
+        Behind the studio curtain
+      </div>
+      <a href="" style="color:black;">KNOW MORE</a>
+    </div>
+  <div class="fordesktop" style="position:relative;background: {{ section.settings.color-bg }};
+    {% if section.settings.background_image != blank %}
+      background-image: url({{ section.settings.background_image | img_url: '1920x1080' }});
+      background-size: cover;
+      background-position: center;
+    {% endif %}">
+    {% if section.settings.image-bg  %}
+    <img src="{{ section.settings.image-bg | image_url }}">
+      {% elsif section.settings.video-bg %}
+
+      {{ section.settings.video-bg | video_tag: autoplay:true, muted:true ,loop:true  }}
+      
+      {% else %}
+      <span style="visibility:hidden;">
+    <img src="https://cdn.shopify.com/s/files/1/0525/3857/2956/files/TDS_1.webp?v=1730031604">
+</span>
+      {% endif %}
+  <div class="right_content">
+    <div class="new-section-header">
+      <h2 class="image-with-text__heading inline-richtext h2">THE DESIGN STUDIO</h2>
+      <div class="subtitle">
+        Behind the studio curtain
+      </div>
+      <a href="" style="color:black;">KNOW MORE</a>
+    </div>
+  <div
+    class="video-section"
+    data-desktop-columns="4"
+    data-mobile-columns="2"
+  >
+    {% for block in section.blocks %}
+      <div class="video-item">
+        
+{% if block.settings.video !=blank %}
+          {{ block.settings.video | video_tag: autoplay:true, muted:true ,loop:true}}
+        {% elsif block.settings.img-ex != blank %}
+  
+  <img src="{{ block.settings.img-ex | image_url}}">
+  
+{% endif %}
+       
+      </div>
+    {% endfor %}
+  </div>
+</div>
+</div>
+
+  <div class="formobilesection">
+    
+       {% if section.settings.image-bg  %}
+    <img src="{{ section.settings.image-bg | image_url }}">
+      {% elsif section.settings.video-bg %}
+
+      {{ section.settings.video-bg | video_tag: autoplay:true, muted:true ,loop:true  }}
+      
+      {% else %}
+      <span style="visibility:hidden;">
+    <img src="https://cdn.shopify.com/s/files/1/0525/3857/2956/files/TDS_1.webp?v=1730031604">
+</span>
+      {% endif %}
+      <div
+    class="video-section mobilevideosection"
+    data-desktop-columns="4"
+    data-mobile-columns="2"
+  >
+    {% for block in section.blocks %}
+      <div class="video-item">
+       {% if block.settings.video !=blank %}
+          {{ block.settings.video | video_tag: autoplay:true, muted:true ,loop:true}}
+        {% elsif block.settings.img-ex != blank %}
+  
+  <img src="{{ block.settings.img-ex | image_url}}">
+  
+{% endif %}
+        
+      </div>
+    {% endfor %}
+  </div>
+  </div>
+</div>
+<!-- Add some CSS for dynamic columns on both mobile and desktop -->
+<style>
+
+  .new-section-header{
+    padding-bottom: 3%;
+    padding-left: 20%;
+  }
+  .right_content{
+    position: absolute;
+    top: 50%;
+    right: 0;
+    transform: translate(0%, -50%);
+    width: 70%;
+  }
+     .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+      padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+    }
+
+    @media screen and (min-width: 750px) {
+        .image-with-video-section img{
+    width:35%;
+  }
+      .section-{{ section.id }}-padding {
+        padding-top: {{ section.settings.padding_top }}px;
+        padding-bottom: {{ section.settings.padding_bottom }}px;
+      }
+      .mobilevideosection{
+        display:none;
+      }
+    }
+  .video-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .video-item {
+    position: relative;
+    line-height: 0;
+    box-sizing: border-box;
+    padding: 4px;
+  }
+
+  /* Desktop Columns */
+  @media screen and (min-width: 768px) {
+    .mobile-section-header{
+      display:none;
+    }
+  .formobilesection {
+    display: none;
+}
+    .video-section[data-desktop-columns="2"] .video-item {
+      flex-basis: calc(50% - 0px); /* Adjust for padding */
+    }
+    .video-section[data-desktop-columns="3"] .video-item {
+      flex-basis: calc(33.33% - 0px);
+    }
+    .video-section[data-desktop-columns="4"] .video-item {
+      flex-basis: calc(25% - 0px);
+    }
+  }
+
+  /* Mobile Columns */
+  @media screen and (max-width: 767px) {
+    .video-section[data-mobile-columns="1"] .video-item {
+      flex-basis: 100%;
+    }
+    .video-section[data-mobile-columns="2"] .video-item {
+      flex-basis: calc(50% - 0px);
+    }
+    .right_content{
+      width: 100%;
+      transform: unset;
+    }
+       .formobilesection {
+    display: blocck;
+}  .image-with-video-section img{
+    width:100%;
+  }
+    .new-section-header {
+    display: none;
+}
+    .mobile-section-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+   .fordesktop{
+     display:none;
+   } 
+    .formobilesection{
+        position: relative;
+      display:flex;
+    }
+    .mobilevideosection{
+       position: absolute;
+    top: 90%;
+      background: {{ section.settings.color-bg }};
+              padding: 4px;
+    }
+    
+    .image-with-video-section{
+      padding-bottom:70%;
+      margin-bottom:22%;
+    }
+  }
+
+  .video-item img {
+    width: 100%;
+    height: auto;
+    border: 8px solid #efede9;
+  }
+
+</style>
+
+{% schema %}
+{
+  "name": "design-video-section",
+  "settings": [
+    {
+      "type": "image_picker",
+      "id": "image-bg",
+      "label": "add image for bg"
+    },
+    {
+      "type": "video",
+      "id": "video-bg",
+      "label": "add video"
+    },
+    {
+      "type": "color",
+      "id": "color-bg",
+      "default": "#f5f5f5",
+      "label": "add background color"
+    },
+    {
+      "type": "image_picker",
+      "id": "background_image",
+      "label": "Background Image"
+    },
+
+   
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_top",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "t:sections.all.padding.padding_bottom",
+      "default": 52
+    }
+  ],
+  "blocks": [
+    {
+      "type": "video_item",
+      "name": "video Item",
+      "settings": [
+        {
+          "type": "video",
+          "id": "video",
+          "label": "video url"
+        },
+        {
+          "type": "image_picker",
+          "id": "img-ex",
+          "label": "add image"
+        }
+      
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "design studio section",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}

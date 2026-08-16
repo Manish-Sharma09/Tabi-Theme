@@ -1,0 +1,287 @@
+{% schema %}
+{
+  "name": "Collection Features",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Our Collections"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        {
+          "value": "image_left",
+          "label": "Image Left"
+        },
+        {
+          "value": "image_right",
+          "label": "Image Right"
+        }
+      ],
+      "default": "image_left"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection_feature",
+      "name": "Collection Feature",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "feature_image",
+          "label": "Feature Image"
+        },
+        {
+          "type": "text",
+          "id": "collection_tag",
+          "label": "Collection Tag",
+          "default": "Organic Cotton"
+        },
+        {
+          "type": "text",
+          "id": "collection_title",
+          "label": "Collection Title",
+          "default": "Anjuman"
+        },
+        {
+          "type": "text",
+          "id": "collection_subtitle",
+          "label": "Collection Subtitle",
+          "default": "Hand Block Print | Gentle Machine Wash"
+        },
+        {
+          "type": "richtext",
+          "id": "collection_description",
+          "label": "Collection Description",
+          "default": "<p>A classic revival of our much-loved Anjuman bed collection, hand block printed with stylized butahs and floral...</p>"
+        },
+        {
+          "type": "url",
+          "id": "collection_link",
+          "label": "Collection Link"
+        },
+        {
+          "type": "collection",
+          "id": "collection_link2",
+          "label": "Select collection"
+        },
+        {
+          "type": "text",
+          "id": "button_text",
+          "label": "Button Text",
+          "default": "SHOW MORE"
+        },
+        {
+          "type": "checkbox",
+          "id": "reverse_layout",
+          "label": "Reverse Layout (Override Section Setting)",
+          "default": false
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection Features",
+      "category": "Collections",
+      "blocks": [
+        {
+          "type": "collection_feature"
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
+<div class="collection-features-section">
+  <div class="page-width">
+    {% if section.settings.title != blank %}
+      <h2 class="section-title">{{ section.settings.title }}</h2>
+    {% endif %}
+    
+    {% for block in section.blocks %}
+      {% if block.type == 'collection_feature' %}
+        {% assign default_layout = section.settings.layout %}
+        {% assign block_layout = block.settings.reverse_layout | default: false %}
+        
+        {% if block_layout %}
+          {% if default_layout == 'image_left' %}
+            {% assign feature_layout = 'image_right' %}
+          {% else %}
+            {% assign feature_layout = 'image_left' %}
+          {% endif %}
+        {% else %}
+          {% assign feature_layout = default_layout %}
+        {% endif %}
+        
+        <div class="collection-feature-wrapper {% if feature_layout == 'image_right' %}image-right{% endif %}" {{ block.shopify_attributes }}>
+          <div class="collection-feature-image">
+            {% if block.settings.feature_image %}
+              <img src="{{ block.settings.feature_image | img_url: 'master' }}" alt="{{ block.settings.collection_title }}" class="feature-image">
+            {% else %}
+              {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
+            {% endif %}
+          </div>
+          
+          <div class="collection-feature-content">
+            {% if block.settings.collection_tag != blank %}
+              <div class="collection-tag">
+                <span>{{ block.settings.collection_tag }}</span>
+              </div>
+            {% endif %}
+            
+            <h2 class="collection-title">{{ block.settings.collection_title }}</h2>
+            
+            {% if block.settings.collection_subtitle != blank %}
+              <div class="collection-subtitle">
+                {{ block.settings.collection_subtitle }}
+              </div>
+            {% endif %}
+            
+            <div class="collection-description">
+              {{ block.settings.collection_description }}
+            </div>
+            
+            {% if block.settings.button_text != blank and block.settings.collection_link != blank %}
+              <div class="collection-button">
+                <a href="{{ block.settings.collection_link }}" class="btn">
+                  {{ block.settings.button_text }}
+                </a>
+              </div>
+            {% endif %}
+
+            {% if block.settings.button_text != blank and block.settings.collection_link2 != blank %}
+              <div class="collection-button">
+                <a href="{{ block.settings.collection_link2 }}" class="btn">
+                  {{ block.settings.button_text }}
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<style>
+.collection-features-section {
+  margin: 60px 0;
+}
+
+.section-title {
+  text-align: center;
+  margin-bottom: 40px;
+  font-size: 32px;
+  font-weight: normal;
+  color: #333;
+}
+
+.collection-feature-wrapper {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 60px;
+}
+
+.collection-feature-wrapper:last-child {
+  margin-bottom: 0;
+}
+
+.collection-feature-image {
+  width: 100%;
+  margin-bottom: 30px;
+}
+
+.collection-feature-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.collection-feature-content {
+  padding: 0 20px;
+}
+
+.collection-tag {
+  display: inline-block;
+  border: 1px solid #ccc;
+  padding: 8px 15px;
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+.collection-title {
+  font-size: 28px;
+  margin-bottom: 10px;
+  font-weight: normal;
+  color: #333;
+}
+
+.collection-subtitle {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 15px;
+}
+
+.collection-description {
+  margin-bottom: 20px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: #333;
+}
+
+.collection-button .btn {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #333;
+}
+
+@media screen and (min-width: 768px) {
+  .collection-feature-wrapper {
+    flex-direction: row;
+    align-items: center;
+  }
+  
+  .collection-feature-wrapper.image-right {
+    flex-direction: row-reverse;
+  }
+  
+  .collection-feature-image {
+    width: 70%;
+    margin-bottom: 0;
+    margin-right: 30px;
+  }
+  
+  .collection-feature-wrapper.image-right .collection-feature-image {
+    margin-right: 0;
+    margin-left: 30px;
+  }
+  
+  .collection-feature-content {
+    width: 30%;
+    padding: 0;
+  }
+  
+  .collection-title {
+    font-size: 32px;
+  }
+}
+
+@media screen and (min-width: 990px) {
+  .collection-feature-image {
+    width: 75%;
+  }
+  
+  .collection-feature-content {
+    width: 25%;
+  }
+}
+</style>

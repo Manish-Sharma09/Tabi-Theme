@@ -1,0 +1,164 @@
+{% schema %}
+{
+  "name": "Category Buttons",
+  "settings": [
+    {
+      "type": "color",
+      "id": "button_bg",
+      "label": "Button Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_text",
+      "label": "Button Text Color",
+      "default": "#00796b"
+    },
+    {
+      "type": "color",
+      "id": "button_border",
+      "label": "Button Border Color",
+      "default": "#00796b"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding Top",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "default": 40,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding Bottom",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "default": 40,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "padding_sides",
+      "label": "Padding Left & Right",
+      "min": 0,
+      "max": 50,
+      "step": 5,
+      "default": 10,
+      "unit": "px"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "category",
+      "name": "Category",
+      "settings": [
+        {
+          "type": "text",
+          "id": "title",
+          "label": "Category Name",
+          "default": "Category"
+        },
+        {
+          "type": "url",
+          "id": "link",
+          "label": "Category Link"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Category Buttons",
+      "category": "Custom",
+      "blocks": [
+        { "type": "category", "settings": { "title": "Apparel" } },
+        { "type": "category", "settings": { "title": "Dining" } },
+        { "type": "category", "settings": { "title": "Decor" } },
+        { "type": "category", "settings": { "title": "Home Textiles" } },
+        { "type": "category", "settings": { "title": "Spa" } },
+        { "type": "category", "settings": { "title": "Gifting" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
+
+<style>
+  .category-buttons {
+    padding-top: {{ section.settings.padding_top }}px;
+    padding-bottom: {{ section.settings.padding_bottom }}px;
+    padding-left: {{ section.settings.padding_sides }}px;
+    padding-right: {{ section.settings.padding_sides }}px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .category-button {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-size: 16px;
+    text-align: center;
+    border: 2px solid {{ section.settings.button_border }};
+    background-color: {{ section.settings.button_bg }};
+    color: {{ section.settings.button_text }};
+    transition: all 0.3s ease-in-out;
+    text-decoration: none;
+    display: inline-block;
+    width: 180px;
+  }
+
+  .category-button:hover {
+    background-color: {{ section.settings.button_text }};
+    color: {{ section.settings.button_bg }};
+  }
+
+  /* Mobile View - 3 in Row 1, 2 in Row 2, 1 Centered in Row 3 */
+  @media (max-width: 768px) {
+    .category-buttons {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      justify-content: center;
+    }
+
+    /* First 3 buttons full width */
+    .category-buttons a:nth-child(1),
+    .category-buttons a:nth-child(2),
+    .category-buttons a:nth-child(3) {
+      grid-column: span 1;
+    }
+
+    /* Next 2 buttons full width */
+    .category-buttons a:nth-child(4),
+    .category-buttons a:nth-child(5) {
+      grid-column: span 1;
+              justify-self: center;
+
+    }
+
+    /* Last button centered */
+    .category-buttons a:nth-child(6) {
+      grid-column: span 3;
+      justify-self: center;
+    }
+
+    .category-button {
+      width: 100%;
+      padding: 10px;
+    }
+  }
+</style>
+
+<div class="category-buttons">
+  {% for block in section.blocks %}
+    <a href="{{ block.settings.link }}" class="category-button">
+      {{ block.settings.title }}
+    </a>
+  {% endfor %}
+</div>

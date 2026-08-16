@@ -1,0 +1,134 @@
+<style>
+    .shop-by-category {
+      display: flex;
+      margin: 0 auto;
+      align-items: flex-start;
+      justify-content: center;
+  }
+    .shop-by-category a {
+      width: 200px;
+      padding: 0 12px;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: var(--ls);
+      cursor: pointer;
+      text-align: center;
+      text-decoration: none;
+      color: black;
+      color: #253c30;
+  }
+    .shop-by-category a img {
+      height:150px;
+      margin: 0 auto 15px;
+      border-radius: 50%;
+      display: block;
+      transition: all 0.3s ease;
+  }
+    .shopbycategory-mainbox{
+      margin:20px auto;
+    }
+    {% if section.settings.hide_desktop %}
+    @media screen and (min-width: 1025px) {
+      .shop-by-category {
+        display: none;
+      }
+    }
+    {% endif %}
+    @media screen and (max-width: 1024px) {
+      .shop-by-category {
+          white-space: nowrap;
+                justify-content: flex-start;
+          overflow: hidden;
+          width: auto;
+        margin: 0 auto;
+      align-items: flex-start;
+          overflow-x: scroll !important;
+      }
+      .shop-by-category a {
+          min-width: 95px;
+          padding: 0;
+      }
+      .shop-by-category a img {
+      height: 65px;
+      margin: 0 auto 15px;
+      display: block;
+      transition: all 0.3s ease;
+  }
+  }
+     @media screen and (max-width: 768px){
+        .shop-by-category a img{
+          height:100px;
+        }
+        .shop-by-category a {
+          min-width: 150px;
+          padding: 0;
+      }
+     }
+</style>
+<div class="shopbycategory-mainbox">
+  {% if section.settings.heading != blank %}
+    <h2
+      class="title inline-richtext h2 scroll-trigger animate--slide-in"
+      style="margin-top:0px;text-transform: uppercase;"
+    >
+      {{ section.settings.heading }}
+    </h2>
+  {% endif %}
+  <div class="shop-by-category">
+    {% for block in section.blocks %}
+      <a href="{{ block.settings.url }}">
+        <img src="{{ block.settings.image  | img_url: 'master' }}">
+        <div>{{ block.settings.text }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% schema %}
+{
+  "name": "shop-by-category",
+     "settings": [
+         {
+           "type": "text",
+            "id" : "heading",
+            "default":"shop by category",
+            "label" : "Heading"
+          },
+    {
+      "type": "checkbox",
+      "id": "hide_desktop",
+      "default": false,
+      "label": "Hide on Desktop"
+    }
+
+
+  ],
+  "blocks" : [
+      {
+        "type" : "blocks",
+        "name" : "blocks",
+        "settings":[
+
+          {
+            "type": "image_picker",
+            "id" : "image",
+            "label" : "Image"
+          },
+          {
+            "type": "url",
+            "id" : "url",
+            "label" : "Url"
+          },
+          {
+            "type": "text",
+            "id" : "text",
+            "label" : "Title"
+          }
+        ]
+      }
+    ],
+  "presets": [{
+      "name": "shop-by-category",
+      "category": "blocks"
+    }]
+}
+{% endschema %}

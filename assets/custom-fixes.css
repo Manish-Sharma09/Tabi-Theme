@@ -1,0 +1,580 @@
+/* ==========================================================================
+   custom-fixes.css
+   Loaded from layout/theme.liquid immediately after base.css.
+
+     1. Product card sizing / equal heights / title wrapping
+     2. Price on a single line
+     3. Whole-card link
+     4. ADD TO CART bar + inline size popup
+     5. Auto-sliding card image carousel
+     6. Header: search + cart on the right
+     7. Mobile horizontal ("diagonal") scroll guard
+     8. Text formatting consistency
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. PRODUCT CARD SIZING
+   base.css had .grid__item fully commented out, which collapsed flex items to
+   min-content and stacked product titles one letter per line. base.css is
+   restored; these rules keep every card in a row the same height.
+   -------------------------------------------------------------------------- */
+
+#product-grid[class*='grid-cols-'] > .grid__item {
+  width: 100%;
+  max-width: 100%;
+}
+
+.product-grid .grid__item,
+.collection .grid__item {
+  min-width: 0;
+  display: flex;
+}
+
+.product-grid .grid__item > .card-wrapper,
+.collection .grid__item > .card-wrapper {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-grid .grid__item .card,
+.collection .grid__item .card {
+  flex: 1 1 auto;
+}
+
+.product-grid .card__media .media img,
+.collection .card__media .media img {
+  object-fit: cover;
+}
+
+.card__heading,
+.card__heading a {
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
+  -webkit-hyphens: none;
+}
+
+.product-grid .card__heading,
+.collection .card__heading {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.3;
+  min-height: 2.6em;
+  margin-bottom: 0.4rem;
+}
+
+.product-grid .card-information,
+.collection .card-information {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.product-grid .card-information .price,
+.collection .card-information .price {
+  margin-top: auto;
+  padding-top: 0.4rem;
+}
+
+/* `new-arrival` chip — the markup shipped with no CSS at all. */
+.sale-tags {
+  position: absolute;
+  z-index: 4;
+  top: 0.8rem;
+  left: 0.8rem;
+  display: inline-block;
+  padding: 0.3rem 0.8rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  letter-spacing: 0.05rem;
+  text-transform: uppercase;
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  border-radius: var(--badge-corner-radius, 0);
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   2. PRICE ON A SINGLE LINE
+   Dawn sets `.price--on-sale .price__sale { display: initial }` — `initial`
+   resolves to `inline`, so the flex-direction/wrap declarations beside it do
+   nothing and the compare-at price drops to a second line in narrow cards.
+   -------------------------------------------------------------------------- */
+
+.price .price__container {
+  display: block;
+}
+
+.price__regular,
+.price--on-sale .price__sale {
+  display: inline-flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: baseline;
+  gap: 0.6rem;
+  white-space: nowrap;
+}
+
+.price .price-item,
+.price .price-item--regular,
+.price .price-item--sale {
+  white-space: nowrap;
+  margin: 0;
+  display: inline-block;
+}
+
+.price s.price-item {
+  opacity: 0.6;
+}
+
+/* Long "From ₹x,xxx – ₹y,yyy" ranges shrink rather than wrap. */
+.product-grid .price,
+.collection .price {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media screen and (max-width: 480px) {
+  .product-grid .price,
+  .collection .price {
+    font-size: 1.3rem;
+  }
+
+  .product-grid .price__regular,
+  .product-grid .price--on-sale .price__sale {
+    gap: 0.4rem;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. WHOLE-CARD LINK
+   Dawn makes the entire card clickable via `.card__heading a::after` stretched
+   over the nearest positioned ancestor — which is `.card-wrapper`. Anything
+   that introduces a closer positioned ancestor (e.g. position:relative on
+   .card__content) silently shrinks that hit area to the text block, so we keep
+   .card-wrapper as the anchor and layer the interactive controls above it.
+   -------------------------------------------------------------------------- */
+
+.card-wrapper,
+.product-card-wrapper {
+  position: relative;
+}
+
+.card__heading a::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  content: '';
+}
+
+/* STACKING CONTAINMENT — this is why the ADD TO CART bars were painting on
+   top of the open menu drawer. `.section-header` is a stacking context at
+   z-index: 3; any positioned card element with z-index >= 3 sitting later in
+   the document therefore painted above it. Giving each grid item its own
+   stacking context at z-index: 0 traps every z-index inside the card, so no
+   card element can ever escape above the header again — whatever numbers are
+   used internally. */
+.product-grid .grid__item,
+.collection .grid__item {
+  position: relative;
+  z-index: 0;
+}
+
+/* Everything the shopper can actually interact with sits above the link
+   overlay (z-index: 1) but stays inside the card's own context. */
+.card-wrapper .quick-add,
+.card-wrapper .card__badge {
+  position: relative;
+  z-index: 2;
+}
+
+/* While a size popup is open its card is lifted above its neighbours — but
+   still far below the header. */
+.product-grid .grid__item.sizes-open,
+.collection .grid__item.sizes-open {
+  z-index: 5;
+}
+
+/* --------------------------------------------------------------------------
+   4. ADD TO CART BAR + INLINE SIZE POPUP
+   -------------------------------------------------------------------------- */
+
+.quick-add {
+  margin: 0.6rem 0 0;
+}
+
+.quick-add__submit--bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 3.6rem;
+  padding: 0.7rem 1rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.09rem;
+  text-transform: uppercase;
+  line-height: 1.2;
+  border-radius: var(--buttons-radius, 0);
+}
+
+.quick-add__label {
+  display: inline-block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.quick-add__submit--bar[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.quick-add__submit--bar .loading__spinner {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+/* Size popup, anchored over the bottom of the card. */
+.card-sizes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  padding: 1.2rem;
+  background: rgb(var(--color-background));
+  border: 0.1rem solid rgba(var(--color-foreground), 0.12);
+  border-radius: var(--product-card-corner-radius, 0);
+  box-shadow: 0 -2px 18px rgba(var(--color-shadow), 0.16);
+  animation: cardSizesIn 0.18s ease-out;
+}
+
+.card-sizes[hidden] {
+  display: none;
+}
+
+@keyframes cardSizesIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.8rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-sizes__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.card-sizes__title {
+  font-size: 1.15rem;
+  letter-spacing: 0.09rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+.card-sizes__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: rgb(var(--color-foreground));
+}
+
+.card-sizes__close svg {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.card-sizes__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.card-sizes__option {
+  min-width: 3.8rem;
+  padding: 0.7rem 0.9rem;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  color: rgb(var(--color-foreground));
+  background: transparent;
+  border: 0.1rem solid rgba(var(--color-foreground), 0.35);
+  border-radius: var(--variant-pills-radius, 0);
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.card-sizes__option:hover:not([disabled]) {
+  background: rgb(var(--color-foreground));
+  color: rgb(var(--color-background));
+  border-color: rgb(var(--color-foreground));
+}
+
+.card-sizes__option[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.card-sizes__option.is-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.card-sizes__details {
+  display: inline-block;
+  margin-top: 0.9rem;
+  font-size: 1.1rem;
+  letter-spacing: 0.05rem;
+  color: rgba(var(--color-foreground), 0.7);
+}
+
+.card-sizes__status {
+  margin: 0.6rem 0 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  min-height: 0;
+}
+
+.card-sizes__status:empty {
+  display: none;
+}
+
+.card-sizes__status[data-state='error'] {
+  color: rgb(200, 40, 40);
+}
+
+/* --------------------------------------------------------------------------
+   5. AUTO-SLIDING CARD IMAGE CAROUSEL
+   Built by custom-fixes.js as an overlay inside .card__media so Dawn's own
+   markup and lazy-loading are left untouched.
+   -------------------------------------------------------------------------- */
+
+script.card-gallery-data {
+  display: none !important;
+}
+
+.card-slider {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.card-slider__track {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.55s cubic-bezier(0.33, 1, 0.68, 1);
+  will-change: transform;
+}
+
+.card-slider__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  background: transparent;
+}
+
+.card-slider__img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* A slide whose image 404s becomes transparent, letting the base product
+   image show through instead of flashing an empty box. */
+.card-slider__slide.is-broken {
+  visibility: hidden;
+}
+
+.card-slider__dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0.8rem;
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.card-slider__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: rgba(var(--color-background), 0.6);
+  box-shadow: 0 0 0 1px rgba(var(--color-foreground), 0.18);
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.card-slider__dot.is-active {
+  background: rgb(var(--color-background));
+  transform: scale(1.35);
+}
+
+/* Slide 0 is deliberately EMPTY so Dawn's own <img> shows through underneath
+   it. That means the card can never render blank: if every slider image fails
+   to load, the shopper still sees the normal product image. Only Dawn's
+   secondary hover image is suppressed, because the slider now owns that job. */
+.card-wrapper.has-slider .card__media .media > img:not(:first-child) {
+  opacity: 0 !important;
+}
+
+.card-wrapper.has-slider:hover .card__media .media > img:first-child,
+.card-wrapper.has-slider .card__media .media > img:first-child {
+  opacity: 1 !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-slider__track {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   6a. HEADER STACKING
+   Dawn ships the header section at z-index: 3, which is low enough for page
+   content to overlap the open menu drawer. Raised well clear; the cart drawer
+   lives outside the header at z-index: 1000 and still sits on top of both.
+   -------------------------------------------------------------------------- */
+
+.section-header.shopify-section-group-header-group {
+  z-index: 20;
+}
+
+.section-header {
+  position: relative;
+}
+
+/* --------------------------------------------------------------------------
+   6b. HEADER — SEARCH + CART ON THE RIGHT
+   Desktop already groups them inside .header__icons; this handles mobile,
+   where the search sat on the far left.
+   -------------------------------------------------------------------------- */
+
+.header__icons {
+  justify-self: end;
+}
+
+.header__icons .header__search,
+.search_desktop_icon {
+  order: 1;
+}
+
+.header__icons #cart-icon-bubble {
+  order: 2;
+}
+
+/* --------------------------------------------------------------------------
+   7. HORIZONTAL / "DIAGONAL" SCROLL GUARD
+   `overflow-x: clip` rather than `hidden` — clip does not create a scroll
+   container, so the sticky header keeps working.
+   -------------------------------------------------------------------------- */
+
+html,
+body {
+  overflow-x: clip;
+  max-width: 100%;
+}
+
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
+img,
+video,
+iframe,
+table {
+  max-width: 100%;
+}
+
+.shop-by-category,
+.collection-feature-slider,
+.slider--mobile,
+.slider--tablet {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.shop-by-category::-webkit-scrollbar,
+.collection-feature-slider::-webkit-scrollbar {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   8. TEXT FORMATTING CONSISTENCY
+   -------------------------------------------------------------------------- */
+
+.product-grid .card__heading,
+.collection .card__heading {
+  font-size: 1.4rem;
+  font-weight: var(--font-body-weight);
+  letter-spacing: 0.04rem;
+  text-transform: none;
+}
+
+@media screen and (min-width: 750px) {
+  .product-grid .card__heading,
+  .collection .card__heading {
+    font-size: 1.5rem;
+  }
+}
+
+.product-grid .price,
+.collection .price {
+  font-size: 1.4rem;
+  line-height: 1.4;
+  letter-spacing: 0.04rem;
+}
+
+.product-grid .card-information > *,
+.collection .card-information > * {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.product-grid .card-information .rating,
+.collection .card-information .rating {
+  margin-bottom: 0.4rem;
+}
+
+.collection-hero__title,
+.collection-hero__description {
+  max-width: 80ch;
+  margin-left: auto;
+  margin-right: auto;
+}

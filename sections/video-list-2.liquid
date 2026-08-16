@@ -1,0 +1,150 @@
+<style>
+  .videosection {
+    max-width: 1400px;
+    margin: auto;
+    padding: 15px 0px;
+  }
+
+  .video-list {
+    display: grid;
+    grid-template-columns: repeat({{ section.settings.desktop }}, 1fr);
+    gap: 20px;
+  }
+
+  .video1 {
+    width: 100%;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .video1 img,
+  .video1 video {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    display: block;
+  }
+
+  @media only screen and (max-width: 768px) {
+    .video-list {
+      grid-template-columns: repeat({{ section.settings.mobile }}, 1fr);
+      gap: 15px;
+    }
+  }
+
+  @media only screen and (max-width: 480px) {
+    .video-list {
+      grid-template-columns: repeat({{ section.settings.mobile }}, 1fr);
+      gap: 10px;
+    }
+  }
+</style>
+
+<section class="videosection">
+  <div class="page-width">
+    {%- if section.settings.title != blank -%}
+      <h2 class="title inline-richtext">
+        {{ section.settings.title }}
+      </h2>
+    {% endif %}
+    <div class="video-list">
+      {% for block in section.blocks %}
+        {% if block.settings['vid-url'] %}
+          <a href="{{ block.settings.url-vid }}">
+          <div class="video1">
+            {{ block.settings['vid-url'] | video_tag: autoplay: true, muted: true, loop: true, loading: 'lazy' }}
+          </div>
+          </a>
+        {% endif %}
+        {% if block.settings.image %}
+            <a href="{{ block.settings.url-img }}">
+          <div class="video1">
+            <img
+              src="{{ block.settings.image | img_url: '300x' }}"
+              srcset="
+                {{ block.settings.image | img_url: '300x' }} 300w,
+                {{ block.settings.image | img_url: '600x' }} 600w,
+                {{ block.settings.image | img_url: '900x' }} 900w
+              "
+              sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
+              alt="{{ block.settings.image.alt }}"
+              loading="lazy"
+            >
+          </div>
+            </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "video-list 2",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Heading",
+      "default": "Heading"
+    },{
+      "type": "text",
+      "id": "mobile",
+      "default":"2",
+      "label": "add 1 or 2 video in row for mobile"
+    },
+    {
+      "type": "text",
+      "id": "desktop",
+      "default":"4",
+      "label": "add 1 from 4 video in row for desktop"
+    }
+  ],
+   "blocks": [
+    {
+      "type": "video",
+      "name": "Video",
+      "settings": [
+        {
+           "type":"video",
+           "id":"vid-url",
+           "label":"Video URL"
+        },
+        {
+          "type": "url",
+          "label": "add url",
+          "id": "url-vid"
+        }
+      ]
+    },
+    {
+      "type": "image",
+      "name": "image",
+      "settings": [
+        {
+           "type":"image_picker",
+           "id":"image",
+           "label":"add image"
+        },
+         {
+          "type": "url",
+          "label": "add url",
+          "id": "url-img"
+        }
+      ]
+    }
+
+   ],
+  "presets": [
+    {
+      "name": "video-list 2"
+    }
+  ]
+}
+{% endschema %}
+
+{% stylesheet %}
+{% endstylesheet %}
+
+{% javascript %}
+{% endjavascript %}

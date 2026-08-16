@@ -1,0 +1,153 @@
+{% schema %}
+{
+  "name": "Reviews Slider",
+  "settings": [
+    {
+      "type": "text",
+      "id": "title",
+      "label": "Section Title",
+      "default": "Customer Reviews"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "review",
+      "name": "Review",
+      "settings": [
+        {
+          "type": "text",
+          "id": "author",
+          "label": "Author Name",
+          "default": "John Doe"
+        },
+        {
+          "type": "text",
+          "id": "position",
+          "label": "Author Position",
+          "default": "Happy Customer"
+        },
+        {
+          "type": "richtext",
+          "id": "review_text",
+          "label": "Review Text",
+          "default": "<p>This product is amazing! Highly recommended.</p>"
+        },
+        {
+          "type": "range",
+          "id": "rating",
+          "label": "Rating",
+          "min": 1,
+          "max": 5,
+          "step": 1,
+          "default": 5
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Reviews Slider",
+      "category": "Custom"
+    }
+  ]
+}
+{% endschema %}
+
+<style>
+  .reviews-slider {
+    padding: 20px;
+    text-align: center;
+    background-color: #f9f9f9;
+  }
+  .reviews-slider h2 {
+    font-size: 2rem;
+    margin-bottom: 30px;
+  }
+  .reviews-container {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 20px;
+    padding-bottom: 20px;
+  }
+  .review-card {
+    flex: 0 0 auto;
+    width: 300px;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    scroll-snap-align: start;
+  }
+  .review-rating {
+    color: #ffd700;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  .review-text {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 15px;
+  }
+  .review-author {
+    font-size: 0.9rem;
+    color: #777;
+  }
+  .review-position {
+    font-size: 0.8rem;
+    color: #999;
+  }
+  @media (max-width: 768px) {
+    .reviews-container {
+      scroll-snap-type: none;
+    }
+    .review-card {
+      width: 80%;
+    }
+  }
+</style>
+
+<div class="reviews-slider">
+  <h2>{{ section.settings.title }}</h2>
+  <div class="reviews-container">
+    {% for block in section.blocks %}
+      <div class="review-card" {{ block.shopify_attributes }}>
+        <div class="review-rating">
+          {% for i in (1..block.settings.rating) %}
+            ★
+          {% endfor %}
+        </div>
+        <div class="review-text">
+          {{ block.settings.review_text }}
+        </div>
+        <div class="review-author">{{ block.settings.author }}</div>
+        <div class="review-position">{{ block.settings.position }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const reviewsContainer = document.querySelector('.reviews-container');
+    if (reviewsContainer) {
+      new Swiper('.reviews-container', {
+        loop: true,
+        slidesPerView: 1,
+        spaceBetween: 20,
+        navigation: {
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev',
+        },
+        breakpoints: {
+          768: {
+            slidesPerView: 2,
+          },
+          1024: {
+            slidesPerView: 3,
+          },
+        },
+      });
+    }
+  });
+</script>

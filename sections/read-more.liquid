@@ -1,0 +1,344 @@
+{% schema %}
+{
+  "name": "Read More Section",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content Settings"
+    },
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Section Heading",
+      "default": "About This Product"
+    },
+    {
+      "type": "richtext",
+      "id": "content",
+      "label": "Content",
+      "default": "<p>This is where your content will be displayed. Add all the text you want to show here.</p>"
+    },
+    {
+      "type": "range",
+      "id": "preview_height",
+      "min": 50,
+      "max": 300,
+      "step": 10,
+      "unit": "px",
+      "label": "Preview Height",
+      "default": 100
+    },
+    {
+      "type": "text",
+      "id": "read_more_text",
+      "label": "Read More Text",
+      "default": "Read More"
+    },
+    {
+      "type": "text",
+      "id": "read_less_text",
+      "label": "Read Less Text",
+      "default": "Read Less"
+    },
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding Top",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Padding Bottom",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "padding_horizontal",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Horizontal Padding",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Margin Top",
+      "default": 30
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "label": "Margin Bottom",
+      "default": 30
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Section Background Color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text Color",
+      "default": "#444444"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button Text Color",
+      "default": "#333333"
+    },
+    {
+      "type": "color",
+      "id": "button_background",
+      "label": "Button Background",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_border",
+      "label": "Button Border Color",
+      "default": "#dddddd"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_background",
+      "label": "Button Hover Background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_text",
+      "label": "Button Hover Text Color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "gradient_color",
+      "label": "Gradient Color (for fade effect)",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Read More Section",
+      "category": "Text"
+    }
+  ]
+}
+{% endschema %}
+{% if section.settings.content !=blank %}
+<div class="read-more-section" 
+     id="read-more-section-{{ section.id }}" 
+     style="
+       background-color: {{ section.settings.background_color }};
+       padding-top: {{ section.settings.padding_top }}px;
+       padding-bottom: {{ section.settings.padding_bottom }}px;
+       padding-left: {{ section.settings.padding_horizontal }}px;
+       padding-right: {{ section.settings.padding_horizontal }}px;
+       margin-top: {{ section.settings.margin_top }}px;
+       margin-bottom: {{ section.settings.margin_bottom }}px;
+     ">
+  
+  {% if section.settings.heading != blank %}
+    <h2 class="read-more-heading" style="color: {{ section.settings.heading_color }};">
+      {{ section.settings.heading }}
+    </h2>
+  {% endif %}
+  
+  <div class="read-more-container">
+    <div class="read-more-content" 
+         style="
+           max-height: {{ section.settings.preview_height }}px;
+           color: {{ section.settings.text_color }};
+         ">
+      {{ section.settings.content }}
+    </div>
+    
+    <button class="read-more-toggle" 
+            data-section-id="{{ section.id }}"
+            style="
+              color: {{ section.settings.button_text_color }};
+              background-color: {{ section.settings.button_background }};
+              border-color: {{ section.settings.button_border }};
+            "
+            data-hover-bg="{{ section.settings.button_hover_background }}"
+            data-hover-color="{{ section.settings.button_hover_text }}">
+      <span class="read-more-text">{{ section.settings.read_more_text }}</span>
+      <span class="read-less-text" style="display: none;">{{ section.settings.read_less_text }}</span>
+    </button>
+  </div>
+</div>
+{% endif %}
+<style>
+  .read-more-section {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  .read-more-heading {
+    margin-bottom: 15px;
+    font-size: 24px;
+    font-weight: 600;
+  }
+  
+  .read-more-container {
+    position: relative;
+    width: 100%;
+  }
+  
+  .read-more-content {
+    overflow: hidden;
+    position: relative;
+    transition: max-height 0.5s ease;
+  }
+  
+  .read-more-content::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 60px;
+    background: linear-gradient(rgba(255, 255, 255, 0), {{ section.settings.gradient_color }});
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  
+  .read-more-content.expanded {
+    max-height: 2000px !important;
+  }
+  
+  .read-more-content.expanded::after {
+    opacity: 0;
+  }
+  
+  .read-more-toggle {
+    display: block;
+    margin: 15px 0 0 auto;
+    padding: 8px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-width: 1px;
+    border-style: solid;
+  }
+  
+  /* Responsive styles */
+  @media screen and (max-width: 767px) {
+    .read-more-heading {
+      font-size: 20px;
+    }
+    
+    .read-more-toggle {
+      width: 40%;
+      text-align: center;
+      padding: 10px 15px;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+  }
+  
+  @media screen and (max-width: 480px) {
+    .read-more-section {
+      padding-left: 15px !important;
+      padding-right: 15px !important;
+    }
+    
+    .read-more-heading {
+      font-size: 18px;
+    }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const toggleButtons = document.querySelectorAll('.read-more-toggle');
+    
+    toggleButtons.forEach(button => {
+      const hoverBg = button.getAttribute('data-hover-bg');
+      const hoverColor = button.getAttribute('data-hover-color');
+      
+      // Set up hover effects using data attributes
+      button.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = hoverBg;
+        this.style.color = hoverColor;
+      });
+      
+      button.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = this.style.backgroundColor;
+        this.style.color = this.style.color;
+      });
+      
+      button.addEventListener('click', function() {
+        const sectionId = this.getAttribute('data-section-id');
+        const contentDiv = document.querySelector(`#read-more-section-${sectionId} .read-more-content`);
+        const readMoreText = this.querySelector('.read-more-text');
+        const readLessText = this.querySelector('.read-less-text');
+        
+        if (contentDiv.classList.contains('expanded')) {
+          contentDiv.classList.remove('expanded');
+          readMoreText.style.display = 'inline';
+          readLessText.style.display = 'none';
+          
+          // Smooth scroll back to the top of the section when collapsing
+          const sectionElement = document.getElementById(`read-more-section-${sectionId}`);
+          sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          contentDiv.classList.add('expanded');
+          readMoreText.style.display = 'none';
+          readLessText.style.display = 'inline';
+        }
+      });
+    });
+    
+    // Fix for hover color reset issue
+    toggleButtons.forEach(button => {
+      const defaultBg = button.style.backgroundColor;
+      const defaultColor = button.style.color;
+      const hoverBg = button.getAttribute('data-hover-bg');
+      const hoverColor = button.getAttribute('data-hover-color');
+      
+      button.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = defaultBg;
+        this.style.color = defaultColor;
+      });
+    });
+  });
+</script>

@@ -1,0 +1,407 @@
+<div class="page-color" style="background-color: {{ section.settings.background_color }};
+  {% if section.settings.background_image != blank %}
+      background-image: url({{ section.settings.background_image | img_url: '1920x1080' }});
+      background-size: cover;
+      background-position: center;
+    {% endif %}
+">
+  <div class="body1 page-width">
+    <button id="prev-btn">
+      <svg fill="#000000" width="20px" height="20px" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path d="M33.934,54.458l30.822,27.938c0.383,0.348,0.864,0.519,1.344,0.519c0.545,0,1.087-0.222,1.482-0.657 c0.741-0.818,0.68-2.083-0.139-2.824L37.801,52.564L64.67,22.921c0.742-0.818,0.68-2.083-0.139-2.824 c-0.817-0.742-2.082-0.679-2.824,0.139L33.768,51.059c-0.439,0.485-0.59,1.126-0.475,1.723 C33.234,53.39,33.446,54.017,33.934,54.458z"></path></svg>
+    </button>
+    <div id="book" class="book">
+      {% for block in section.blocks %}
+        <div id="p{{ forloop.index }}" class="paper">
+          <div class="front">
+            <div id="f{{ forloop.index }}" class="front-content">
+              <img src="{{ block.settings.front_image | img_url: 'master' }}" width="" height="">
+            </div>
+          </div>
+          <div class="back">
+            <div id="b{{ forloop.index }}" class="back-content">
+              <img src="{{ block.settings.back_image | img_url: 'master' }}" width="" height="">
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <button id="next-btn">
+     <svg fill="#000000" width="14px" height="14px" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg"><polygon points="150.46 478 129.86 456.5 339.11 256 129.86 55.49 150.46 34 382.14 256 150.46 478"></polygon></svg>
+    </button>
+     <button id="grid-btn">
+      <div class="grid-icon">
+        <svg width="40px" height="20px" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M7 1H1V7H7V1ZM7 9H1V15H7V9ZM9 1H15V7H9V1ZM15 9H9V15H15V9Z" fill="#ffffff"></path> </g></svg>
+      </div>
+    </button>
+    <div id="image-grid-container" class="image-grid hidden">
+      <button id="close-grid">✖</button>
+      <div class="grid-content">
+        {% for block in section.blocks %}
+          <img src="{{ block.settings.front_image | img_url: 'master' }}" class="grid-image" width="" height="">
+          <img src="{{ block.settings.back_image | img_url: 'master' }}" class="grid-image" width="" height="">
+        {% endfor %}
+      </div>
+    </div>
+</div>
+  <div class="progress-container-cstm" style="background-color: {{ section.settings.progress-container }};">>
+   <div class="progress-container">
+      <input type="range" id="progress-bar" min="1" max="{{ section.blocks.size }}" value="1">
+    </div>
+    <div id="page-number" class="page-number">1 / {{ section.blocks.size }}</div>
+  </div>
+</div>
+
+<style>
+.page-color {
+  /* background: #121212bf; */
+  position: relative;
+}
+.progress-container-cstm{
+  background: #000000;
+  height: 60px;
+}
+.body1 {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1;
+  position: relative;
+}
+.book {
+  margin: 20px 0;
+  position: relative;
+  width: 56vh;
+  height: 80vh;
+  transition: transform 0.5s;
+}
+.paper {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  perspective: 1500px;
+}
+.front, .back {
+  background-color: white;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform-origin: left;
+  transition: transform 0.5s;
+}
+.front {
+  z-index: 1;
+  backface-visibility: hidden;
+  border-left: 3px solid #fcf4e9;
+}
+.back {
+  z-index: 0;
+}
+.front-content, .back-content {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.back-content {
+  transform: rotateY(180deg);
+}
+.flipped .front, .flipped .back {
+  transform: rotateY(-180deg);
+}
+.arrow-1 {
+  border: solid #000000;
+  border-width: 0 3px 3px 0;
+  display: inline-block;
+  padding: 5px;
+}
+.arrow-1.right {
+  transform: rotate(-45deg);
+}
+.left {
+  transform: rotate(135deg);
+}
+.body1 button {
+  position: relative;
+  border: none;
+  background-color: transparent;
+  cursor: pointer;
+  margin: 10px;
+  transition: transform 0.5s;
+}
+button:focus {
+  outline: none;
+}
+#f1, #b{{ section.blocks.size }} {
+  background-color: #9b7e58e8;
+}
+.paper img {
+  /* object-fit: cover; */
+  width: 100%;
+  height: 100%;
+}
+{% for block in section.blocks %}
+#p{{ forloop.index }} {
+  z-index: {{ section.blocks.size | minus: forloop.index | plus: 1 }};
+}
+{% endfor %}
+button#prev-btn {
+  position: absolute;
+  left: 0;
+  height: 50px;
+  /* background: #212b36; */
+  width: 30px;
+}
+button#next-btn {
+  position: absolute;
+  right: 0;
+  height: 50px;
+  /* background: #212b36; */
+  width: 30px;
+}
+.page-number {
+  position: absolute;
+  bottom: 0px;
+  left: 26%;
+  transform: translateX(-50%);
+  color: white;
+}
+.progress-container {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50%;
+}
+#progress-bar {
+  width: 100%;
+  appearance: none;
+  height: 5px;
+  background: #ccc;
+  outline: none;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+#progress-bar:hover {
+  opacity: 1;
+}
+#grid-btn {
+  position: absolute;
+  bottom: -75px;
+  right: 50px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  left: 0;
+}
+.grid-icon {
+  color: white;
+  font-size: 30px;
+}
+.image-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  z-index: 5;
+}
+.hidden {
+  display: none;
+}
+.grid-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+  max-width: 80%;
+  overflow-Y: scroll;
+}
+.grid-image {
+  width: 100%;
+  height: auto;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.grid-image:hover {
+  transform: scale(1.05);
+}
+#close-grid {
+  background: #212b36;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  font-size: 16px;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  border-radius: 5px;
+}
+@media(max-width: 1024px){
+  .book {
+    width: 40vh;
+    height: 40vh;
+  }
+  .page-number {
+    left: 27%;
+  }
+  #grid-btn {
+      right: 0px;
+  }
+}
+@media(max-width: 580px){
+  .book {
+    width: 50%;
+    height: 35vh;
+    margin: 10px 0;
+  }
+  .progress-container-cstm {
+    display: none;
+  }
+  button#next-btn {
+    height: 40px;
+    width: 30px;
+    z-index: 1;
+    right: 6px;
+    background: none;
+  }
+  button#prev-btn {
+    height: 40px;
+    width: 30px;
+    left: 6px;
+     z-index: 1;
+     background: none;
+  }
+ #grid-btn .grid-icon {
+    display: none;
+}
+   .arrow-1 {
+    border: solid #000;
+    border-width: 0 3px 3px 0;
+    display: inline-block;
+    padding: 4px;
+}
+}
+</style>
+
+{% schema %}
+{
+  "name": "Flipbook",
+  "settings": [
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background Top",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "progress-container",
+      "label": "Background Bottom",
+      "default": "#000000"
+    },
+     {
+      "type": "image_picker",
+      "id": "background_image",
+      "label": "Background Image"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "page",
+      "name": "Flipbook Page",
+      "settings": [
+        {
+          "type": "image_picker",
+          "id": "front_image",
+          "label": "Front Image"
+        },
+        {
+          "type": "image_picker",
+          "id": "back_image",
+          "label": "Back Image"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Flipbook"
+    }
+  ]
+}
+{% endschema %}
+
+
+<script>
+const prevBtn = document.querySelector("#prev-btn");
+const nextBtn = document.querySelector("#next-btn");
+const book = document.querySelector("#book");
+const pageNumber = document.querySelector("#page-number");
+const progressBar = document.querySelector("#progress-bar");
+const papers = document.querySelectorAll(".paper");
+let currentLocation = 1;
+let numOfPapers = papers.length;
+let maxLocation = numOfPapers + 1;
+prevBtn.addEventListener("click", goPrevPage);
+nextBtn.addEventListener("click", goNextPage);
+progressBar.addEventListener("input", updatePageFromProgress);
+function updatePageNumber() {
+  pageNumber.textContent = `${currentLocation} / ${numOfPapers}`;
+  progressBar.value = currentLocation;
+}
+function openBook() {
+  book.style.transform = "translateX(50%)";
+}
+function closeBook(isAtBeginning) {
+  book.style.transform = isAtBeginning ? "translateX(0%)" : "translateX(100%)";
+}
+function goNextPage() {
+  if (currentLocation < maxLocation) {
+    const paper = papers[currentLocation - 1];
+    paper.classList.add("flipped");
+    paper.style.zIndex = currentLocation;
+    if (currentLocation === 1) openBook();
+    if (currentLocation === numOfPapers) closeBook(false);
+    currentLocation++;
+    updatePageNumber();
+  }
+}
+function goPrevPage() {
+  if (currentLocation > 1) {
+    currentLocation--;
+    const paper = papers[currentLocation - 1];
+    paper.classList.remove("flipped");
+    paper.style.zIndex = numOfPapers - currentLocation;
+    if (currentLocation === 1) closeBook(true);
+    if (currentLocation === numOfPapers) openBook();
+    updatePageNumber();
+  }
+}
+function updatePageFromProgress() {
+  let newPage = parseInt(progressBar.value);
+  while (currentLocation < newPage) goNextPage();
+  while (currentLocation > newPage) goPrevPage();
+}
+const gridBtn = document.querySelector("#grid-btn");
+const imageGrid = document.querySelector("#image-grid-container");
+const closeGrid = document.querySelector("#close-grid");
+gridBtn.addEventListener("click", () => {
+  imageGrid.classList.remove("hidden");
+});
+closeGrid.addEventListener("click", () => {
+  imageGrid.classList.add("hidden");
+});
+</script>

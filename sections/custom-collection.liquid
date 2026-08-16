@@ -1,0 +1,576 @@
+{% comment %}
+  Collection Feature Section for Dawn Theme
+  File: sections/collection-feature.liquid
+{% endcomment %}
+
+{%- style -%}
+  .section-{{ section.id }}-padding {
+    padding-top: {{ section.settings.padding_top | times: 0.75 | round: 0 }}px;
+    padding-bottom: {{ section.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+  }
+
+  @media screen and (min-width: 750px) {
+    .section-{{ section.id }}-padding {
+      padding-top: {{ section.settings.padding_top }}px;
+      padding-bottom: {{ section.settings.padding_bottom }}px;
+    }
+  }
+
+  .collection-feature-grid {
+    display: grid;
+    grid-template-columns: repeat({{ section.settings.columns_mobile }}, 1fr);
+    gap: 2rem;
+  }
+
+  @media screen and (min-width: 750px) {
+    .collection-feature-grid {
+      grid-template-columns: repeat({{ section.settings.columns_desktop }}, 1fr);
+    }
+  }
+
+  .collection-feature-slider {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .collection-feature-slider .collection-feature-grid {
+    width: max-content;
+    grid-template-columns: repeat({{ section.blocks.size }}, 300px);
+  }
+
+  @media screen and (min-width: 750px) {
+    .collection-feature-slider .collection-feature-grid {
+      grid-template-columns: repeat({{ section.blocks.size }}, 400px);
+    }
+  }
+
+  .collection-feature-item {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    overflow: hidden;
+    border-radius: {{ section.settings.border_radius }}px;
+    scroll-snap-align: start;
+    aspect-ratio: 1 / 1.2;
+  }
+
+  .collection-feature-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .collection-feature-item:hover .collection-feature-image {
+    transform: scale(1.05);
+  }
+
+  .collection-feature-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.4));
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    color: white;
+    padding: 2rem;
+  }
+
+  .collection-feature-title {
+    font-size: {{ section.settings.title_size }}rem;
+    font-weight: {{ section.settings.title_weight }};
+    margin-bottom: 1rem;
+    text-transform: {{ section.settings.title_transform }};
+    letter-spacing: {{ section.settings.title_spacing }}px;
+    color:white;
+  }
+
+  .collection-feature-button {
+    display: inline-block;
+    padding: {{ section.settings.button_padding_v }}px {{ section.settings.button_padding_h }}px;
+    background: {{ section.settings.button_bg_color }};
+    color: {{ section.settings.button_text_color }};
+    text-decoration: none;
+    border-radius: {{ section.settings.button_border_radius }}px;
+    font-size: {{ section.settings.button_text_size }}rem;
+    font-weight: {{ section.settings.button_text_weight }};
+    text-transform: {{ section.settings.button_text_transform }};
+    letter-spacing: {{ section.settings.button_letter_spacing }}px;
+    transition: all 0.3s ease;
+    border: {{ section.settings.button_border_width }}px solid {{ section.settings.button_border_color }};
+  }
+
+  .collection-feature-button:hover {
+    background: {{ section.settings.button_hover_bg }};
+    color: {{ section.settings.button_hover_text }};
+    transform: translateY(-2px);
+  }
+
+  
+{%- endstyle -%}
+
+<div class="collection-feature-section section-{{ section.id }}-padding">
+  <div class="page-width">
+    {% if section.settings.section_title != blank %}
+      <div class="section-header text-center">
+        <h2 class="section-title">{{ section.settings.section_title }}</h2>
+        {% if section.settings.section_description != blank %}
+          <p class="section-description">{{ section.settings.section_description }}</p>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    <div class="collection-feature-container {% if section.settings.layout == 'slider' %}collection-feature-slider{% endif %}">
+      <div class="collection-feature-grid">
+        {% for block in section.blocks %}
+          {% liquid
+            if block.settings.collection != blank
+              assign collection = collections[block.settings.collection]
+              if block.settings.use_collection_image and collection.products.first.featured_image
+                assign featured_image = collection.products.first.featured_image
+              elsif block.settings.custom_image
+                assign featured_image = block.settings.custom_image
+              else
+                assign featured_image = collection.featured_image
+              endif
+              assign collection_url = collection.url
+              assign collection_title = collection.title
+            else
+              assign featured_image = block.settings.custom_image
+              assign collection_url = block.settings.custom_url
+              assign collection_title = block.settings.custom_title
+            endif
+
+            if block.settings.override_title != blank
+              assign collection_title = block.settings.override_title
+            endif
+          %}
+
+          <a
+            class="collection-feature-item"
+            href="{{ collection_url | default: '#' }}"
+            aria-label="{{ collection_title | escape }}"
+            {{ block.shopify_attributes }}
+          >
+            {% if featured_image %}
+              <img 
+                src="{{ featured_image | img_url: '800x' }}" 
+                alt="{{ collection_title | escape }}"
+                class="collection-feature-image"
+                loading="lazy"
+              />
+            {% else %}
+              <div class="collection-feature-placeholder">
+                {{ 'collection-1' | placeholder_svg_tag }}
+              </div>
+            {% endif %}
+
+            <div class="collection-feature-overlay">
+              <h3 class="collection-feature-title">{{ collection_title }}</h3>
+              
+              {% if block.settings.show_button %}
+                <span class="collection-feature-button">
+                  {{ block.settings.button_text | default: 'Shop Now' }}
+                </span>
+              {% endif %}
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "Collection Feature",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "section_title",
+      "label": "Section Title",
+      "default": "Featured Collections"
+    },
+    {
+      "type": "textarea",
+      "id": "section_description",
+      "label": "Section Description"
+    },
+    {
+      "type": "select",
+      "id": "layout",
+      "label": "Layout",
+      "options": [
+        {
+          "value": "grid",
+          "label": "Grid"
+        },
+        {
+          "value": "slider",
+          "label": "Slider"
+        }
+      ],
+      "default": "grid"
+    },
+    {
+      "type": "range",
+      "id": "columns_desktop",
+      "min": 2,
+      "max": 4,
+      "step": 1,
+      "label": "Desktop columns",
+      "default": 3
+    },
+    {
+      "type": "range",
+      "id": "columns_mobile",
+      "min": 1,
+      "max": 3,
+      "step": 1,
+      "label": "Mobile columns",
+      "default": 1
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "label": "Border radius",
+      "default": 8,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Title Settings"
+    },
+    {
+      "type": "range",
+      "id": "title_size",
+      "min": 1,
+      "max": 4,
+      "step": 0.1,
+      "label": "Title size",
+      "default": 2
+    },
+    {
+      "type": "select",
+      "id": "title_weight",
+      "label": "Title weight",
+      "options": [
+        {
+          "value": "300",
+          "label": "Light"
+        },
+        {
+          "value": "400",
+          "label": "Normal"
+        },
+        {
+          "value": "500",
+          "label": "Medium"
+        },
+        {
+          "value": "600",
+          "label": "Semi-bold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        }
+      ],
+      "default": "600"
+    },
+    {
+      "type": "select",
+      "id": "title_transform",
+      "label": "Title transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "range",
+      "id": "title_spacing",
+      "min": 0,
+      "max": 10,
+      "step": 0.5,
+      "label": "Title letter spacing",
+      "default": 2,
+      "unit": "px"
+    },
+    {
+      "type": "header",
+      "content": "Button Settings"
+    },
+    {
+      "type": "range",
+      "id": "button_text_size",
+      "min": 0.8,
+      "max": 2,
+      "step": 0.1,
+      "label": "Button text size",
+      "default": 1
+    },
+    {
+      "type": "select",
+      "id": "button_text_weight",
+      "label": "Button text weight",
+      "options": [
+        {
+          "value": "300",
+          "label": "Light"
+        },
+        {
+          "value": "400",
+          "label": "Normal"
+        },
+        {
+          "value": "500",
+          "label": "Medium"
+        },
+        {
+          "value": "600",
+          "label": "Semi-bold"
+        },
+        {
+          "value": "700",
+          "label": "Bold"
+        }
+      ],
+      "default": "500"
+    },
+    {
+      "type": "select",
+      "id": "button_text_transform",
+      "label": "Button text transform",
+      "options": [
+        {
+          "value": "none",
+          "label": "None"
+        },
+        {
+          "value": "uppercase",
+          "label": "Uppercase"
+        },
+        {
+          "value": "lowercase",
+          "label": "Lowercase"
+        },
+        {
+          "value": "capitalize",
+          "label": "Capitalize"
+        }
+      ],
+      "default": "uppercase"
+    },
+    {
+      "type": "range",
+      "id": "button_letter_spacing",
+      "min": 0,
+      "max": 5,
+      "step": 0.5,
+      "label": "Button letter spacing",
+      "default": 1,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_padding_v",
+      "min": 5,
+      "max": 25,
+      "step": 1,
+      "label": "Button vertical padding",
+      "default": 12,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_padding_h",
+      "min": 10,
+      "max": 50,
+      "step": 2,
+      "label": "Button horizontal padding",
+      "default": 24,
+      "unit": "px"
+    },
+    {
+      "type": "range",
+      "id": "button_border_radius",
+      "min": 0,
+      "max": 50,
+      "step": 1,
+      "label": "Button border radius",
+      "default": 4,
+      "unit": "px"
+    },
+    {
+      "type": "color",
+      "id": "button_bg_color",
+      "label": "Button background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "color",
+      "id": "button_text_color",
+      "label": "Button text color",
+      "default": "#000000"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_bg",
+      "label": "Button hover background",
+      "default": "#f5f5f5"
+    },
+    {
+      "type": "color",
+      "id": "button_hover_text",
+      "label": "Button hover text color",
+      "default": "#000000"
+    },
+    {
+      "type": "range",
+      "id": "button_border_width",
+      "min": 0,
+      "max": 5,
+      "step": 1,
+      "label": "Button border width",
+      "default": 1,
+      "unit": "px"
+    },
+    {
+      "type": "color",
+      "id": "button_border_color",
+      "label": "Button border color",
+      "default": "#000000"
+    },
+    {
+      "type": "header",
+      "content": "Section padding"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Top padding",
+      "default": 36
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom padding",
+      "default": 36
+    }
+  ],
+  "blocks": [
+    {
+      "type": "collection_item",
+      "name": "Collection Item",
+      "settings": [
+        {
+          "type": "collection",
+          "id": "collection",
+          "label": "Collection"
+        },
+        {
+          "type": "checkbox",
+          "id": "use_collection_image",
+          "label": "Use first product image",
+          "default": true,
+          "info": "Uses the first product's featured image from the collection"
+        },
+        {
+          "type": "image_picker",
+          "id": "custom_image",
+          "label": "Custom image",
+          "info": "Overrides collection image"
+        },
+        {
+          "type": "text",
+          "id": "override_title",
+          "label": "Override title",
+          "info": "Leave blank to use collection title"
+        },
+        {
+          "type": "text",
+          "id": "custom_title",
+          "label": "Custom title",
+          "info": "Used when no collection is selected"
+        },
+        {
+          "type": "url",
+          "id": "custom_url",
+          "label": "Custom URL",
+          "info": "Used when no collection is selected"
+        },
+        {
+          "type": "checkbox",
+          "id": "show_button",
+          "label": "Show button",
+          "default": true
+        },
+        {
+          "type": "text",
+          "id": "button_text",
+          "label": "Button text",
+          "default": "Shop All"
+        }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection Feature",
+      "blocks": [
+        {
+          "type": "collection_item",
+          "settings": {
+            "button_text": "Shop All"
+          }
+        },
+        {
+          "type": "collection_item",
+          "settings": {
+            "button_text": "Shop All"
+          }
+        },
+        {
+          "type": "collection_item",
+          "settings": {
+            "button_text": "Shop All"
+          }
+        }
+      ]
+    }
+  ]
+}
+{% endschema %}

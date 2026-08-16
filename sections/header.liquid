@@ -1529,9 +1529,20 @@ a.cstm-header-con {
   header.header.page-width .mobile-cart-icon {
     order: 4;
     flex: 0 0 auto;
-    position: static;
+    /* MUST stay `relative`, never `static`: .cart-count-bubble is
+       position:absolute and needs this element as its containing block.
+       With `static` the badge escaped up to `.header` and rendered in the
+       top-left corner, on top of the menu drawer. */
+    position: relative;
     transform: none;
     margin: 0;
+  }
+
+  header.header.page-width .mobile-cart-icon .cart-count-bubble {
+    top: 0.2rem;
+    right: 0.2rem;
+    left: auto;
+    bottom: auto;
   }
 
   header.header.page-width .header__icons {

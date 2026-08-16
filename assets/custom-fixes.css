@@ -381,9 +381,18 @@ script.card-gallery-data {
   position: absolute;
   inset: 0;
   overflow: hidden;
-  z-index: 1;
+  /* Above the card link overlay (z-index: 1) so the arrows are clickable.
+     `pointer-events: none` means image clicks still fall through to the link;
+     only .card-slider__nav opts back in. */
+  z-index: 2;
   pointer-events: none;
   border-radius: inherit;
+}
+
+/* Only the arrows are interactive; the rest of the slider stays click-through
+   so the whole-card link keeps working. */
+.card-slider__nav {
+  pointer-events: auto;
 }
 
 .card-slider__track {
@@ -415,6 +424,57 @@ script.card-gallery-data {
    image show through instead of flashing an empty box. */
 .card-slider__slide.is-broken {
   visibility: hidden;
+}
+
+.card-slider__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: auto;
+  background: rgba(var(--color-background), 0.88);
+  color: rgb(var(--color-foreground));
+  box-shadow: 0 1px 6px rgba(var(--color-shadow), 0.2);
+  opacity: 0;
+  transition: opacity 0.18s ease, background-color 0.18s ease;
+}
+
+.card-slider__nav--prev {
+  left: 0.8rem;
+}
+
+.card-slider__nav--next {
+  right: 0.8rem;
+}
+
+.card-slider__nav svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+/* Arrows are a pointer-device affordance only — touch devices keep autoplay. */
+@media (hover: hover) and (pointer: fine) {
+  .card-wrapper.has-slider .card-slider__nav {
+    display: flex;
+  }
+
+  .card-wrapper.has-slider:hover .card-slider__nav,
+  .card-wrapper.has-slider:focus-within .card-slider__nav {
+    opacity: 1;
+  }
+
+  .card-slider__nav:hover {
+    background: rgb(var(--color-background));
+  }
 }
 
 .card-slider__dots {
@@ -463,6 +523,39 @@ script.card-gallery-data {
 }
 
 /* --------------------------------------------------------------------------
+   6z. MENU DRAWER — pinned, not scrolling away
+   Dawn positions .menu-drawer absolutely against the header, so a
+   non-sticky header carries the open drawer up and out of view. Pin it to the
+   viewport while it is open and let it own its own scrolling.
+   -------------------------------------------------------------------------- */
+
+.section-header.menu-open .menu-drawer,
+.header-wrapper .menu-open .menu-drawer {
+  position: fixed;
+  top: var(--header-bottom-position, 0px);
+  left: 0;
+  width: 100%;
+  height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
+  max-height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.section-header.menu-open menu-drawer > details[open] > summary::before {
+  position: fixed;
+  top: var(--header-bottom-position, 0px);
+  left: 0;
+  width: 100%;
+  height: calc(var(--viewport-height, 100vh) - var(--header-bottom-position, 0px));
+}
+
+/* Keep the header visible for as long as the drawer is open. */
+.section-header.menu-open {
+  position: sticky;
+  top: 0;
+}
+
+/* --------------------------------------------------------------------------
    6a. HEADER STACKING
    Dawn ships the header section at z-index: 3, which is low enough for page
    content to overlap the open menu drawer. Raised well clear; the cart drawer
@@ -498,19 +591,23 @@ script.card-gallery-data {
 
 /* --------------------------------------------------------------------------
    7. HORIZONTAL / "DIAGONAL" SCROLL GUARD
-   `overflow-x: clip` rather than `hidden` — clip does not create a scroll
-   container, so the sticky header keeps working.
+
+   Scoped to #MainContent on purpose. Putting overflow-x on <html> stops
+   <html> being `overflow: visible`, which stops <body>'s overflow propagating
+   to the viewport — and Dawn's menu-drawer scroll lock is exactly that:
+   `body { overflow: hidden }`. That is why the drawer scrolled away with the
+   page. Clipping the main content instead leaves the propagation chain, and
+   therefore the scroll lock, completely intact.
    -------------------------------------------------------------------------- */
 
-html,
-body {
+#MainContent,
+.shopify-section-group-footer-group {
   overflow-x: clip;
-  max-width: 100%;
 }
 
 @supports not (overflow: clip) {
-  html,
-  body {
+  #MainContent,
+  .shopify-section-group-footer-group {
     overflow-x: hidden;
   }
 }
@@ -535,30 +632,240 @@ table {
   display: none;
 }
 
+
+/* ==========================================================================
+   9. REFERENCE CARD LAYOUT
+      [ image ] / [ ADD TO BAG bar ] / [ FABRIC ] / title / price / sizes / swatches
+   ========================================================================== */
+
+/* Edge-to-edge grid with a hairline gutter, like the reference. */
+.collection.page-width {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#product-grid.product-grid {
+  column-gap: 0.2rem;
+  row-gap: 3.2rem;
+  margin-bottom: 0;
+}
+
+@media screen and (min-width: 990px) {
+  #product-grid.product-grid {
+    column-gap: 0.4rem;
+    row-gap: 4rem;
+  }
+}
+
+/* Card content stacks: bar first, then the text block. */
+.product-grid .card > .card__content {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  gap: 0;
+}
+
+.product-grid .card > .card__content > .quick-add {
+  order: 1;
+  margin: 0;
+}
+
+.product-grid .card > .card__content > .card__information {
+  order: 2;
+  padding: 1.2rem 1.2rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.product-grid .card > .card__content > .card__badge {
+  order: 3;
+}
+
+/* --- ADD TO BAG bar ------------------------------------------------------ */
+.product-grid .quick-add__submit--bar {
+  width: 100%;
+  min-height: 4.4rem;
+  padding: 1.2rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: rgba(var(--color-foreground), 0.045);
+  color: rgb(var(--color-foreground));
+  font-size: 1.2rem;
+  letter-spacing: 0.14rem;
+  text-transform: uppercase;
+  transition: background-color 0.16s ease;
+}
+
+.product-grid .quick-add__submit--bar::after,
+.product-grid .quick-add__submit--bar::before {
+  display: none;
+}
+
+.product-grid .quick-add__submit--bar .quick-add__label {
+  text-decoration: underline;
+  text-underline-offset: 0.4rem;
+  text-decoration-thickness: 0.06rem;
+}
+
+.product-grid .quick-add__submit--bar:hover:not([disabled]) {
+  background: rgba(var(--color-foreground), 0.09);
+}
+
+/* --- Fabric chip --------------------------------------------------------- */
+.card__fabric {
+  display: inline-block;
+  margin-bottom: 0.9rem;
+  padding: 0.45rem 0.9rem;
+  border: 0.1rem solid rgba(var(--color-foreground), 0.35);
+  font-size: 1rem;
+  line-height: 1.2;
+  letter-spacing: 0.1rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Title: exactly one line, ellipsis ----------------------------------- */
+.product-grid .card__heading,
+.collection .card__heading {
+  display: block;
+  -webkit-line-clamp: none;
+  line-clamp: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 0.6rem;
+  font-size: 1.45rem;
+  line-height: 1.4;
+  letter-spacing: 0.02rem;
+}
+
+.product-grid .card__heading a,
+.collection .card__heading a {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.product-grid .card-information,
+.collection .card-information {
+  width: 100%;
+  align-items: flex-start;
+}
+
+.product-grid .card-information .price,
+.collection .card-information .price {
+  margin: 0 0 0.9rem;
+  padding: 0;
+  font-size: 1.45rem;
+  letter-spacing: 0.02rem;
+}
+
+/* --- Size row ------------------------------------------------------------ */
+.card__sizes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.9rem;
+}
+
+.card__size {
+  display: inline-block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 1.2rem;
+  line-height: 1.2;
+  letter-spacing: 0.04rem;
+  color: rgba(var(--color-foreground), 0.85);
+}
+
+.card__size--button {
+  cursor: pointer;
+  transition: color 0.12s ease, opacity 0.12s ease;
+  position: relative;
+}
+
+.card__size--button:hover:not([disabled]) {
+  color: rgb(var(--color-foreground));
+  text-decoration: underline;
+  text-underline-offset: 0.3rem;
+}
+
+.card__size--button[disabled] {
+  opacity: 0.3;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.card__size--button.is-loading {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.card__sizes-status {
+  margin: -0.4rem 0 0.8rem;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+
+.card__sizes-status:empty {
+  display: none;
+}
+
+.card__sizes-status[data-state='error'] {
+  color: rgb(200, 40, 40);
+}
+
+/* --- Colour swatches ----------------------------------------------------- */
+.card__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+
+.card__swatch {
+  display: block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background-color: rgba(var(--color-foreground), 0.12);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 0.1rem rgba(var(--color-foreground), 0.28);
+}
+
+/* --- "New" chip ---------------------------------------------------------- */
+.sale-tags {
+  top: 1rem;
+  left: 1rem;
+  padding: 0.35rem 0.7rem;
+  font-size: 1rem;
+  letter-spacing: 0.06rem;
+  text-transform: capitalize;
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  border-radius: 0;
+}
+
 /* --------------------------------------------------------------------------
    8. TEXT FORMATTING CONSISTENCY
    -------------------------------------------------------------------------- */
 
+/* Heading and price typography is owned by section 9 (reference layout). */
 .product-grid .card__heading,
 .collection .card__heading {
-  font-size: 1.4rem;
   font-weight: var(--font-body-weight);
-  letter-spacing: 0.04rem;
   text-transform: none;
-}
-
-@media screen and (min-width: 750px) {
-  .product-grid .card__heading,
-  .collection .card__heading {
-    font-size: 1.5rem;
-  }
-}
-
-.product-grid .price,
-.collection .price {
-  font-size: 1.4rem;
-  line-height: 1.4;
-  letter-spacing: 0.04rem;
 }
 
 .product-grid .card-information > *,

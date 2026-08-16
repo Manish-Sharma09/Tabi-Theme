@@ -151,8 +151,38 @@
           </div>
         </div>
       </div>
+      {%- liquid
+        assign fabric_label = ''
+        if card_product.metafields.custom.fabric != blank
+          assign fabric_label = card_product.metafields.custom.fabric.value
+        elsif card_product.metafields.custom.material != blank
+          assign fabric_label = card_product.metafields.custom.material.value
+        elsif card_product.type != blank
+          assign fabric_label = card_product.type
+        endif
+
+        assign size_option_index = 0
+        assign colour_option_index = 0
+        for card_option in card_product.options_with_values
+          assign option_name_lc = card_option.name | downcase
+          if option_name_lc contains 'size'
+            assign size_option_index = forloop.index
+          endif
+          if option_name_lc contains 'color' or option_name_lc contains 'colour'
+            assign colour_option_index = forloop.index
+          endif
+        endfor
+
+        assign single_option = false
+        if card_product.options_with_values.size == 1
+          assign single_option = true
+        endif
+      -%}
       <div class="card__content">
         <div class="card__information">
+          {%- if fabric_label != blank -%}
+            <span class="card__fabric">{{ fabric_label | escape }}</span>
+          {%- endif -%}
           <h3
             class="card__heading{% if card_product.featured_media or settings.card_style == 'standard' %} h5{% endif %}"
             {% if card_product.featured_media or settings.card_style == 'card' %}
@@ -213,6 +243,70 @@
             {%- endif -%}
 
             {% render 'price', product: card_product, price_class: '', show_compare_at_price: true %}
+
+            {%- if size_option_index > 0 -%}
+              {%- assign size_option = card_product.options_with_values[size_option_index | minus: 1] -%}
+              <div
+                class="card__sizes{% if single_option %} card__sizes--interactive{% endif %}"
+                {% if single_option %}
+                  role="group" aria-label="{{ size_option.name | escape }}"
+                {% endif %}
+              >
+                {%- for size_value in size_option.values -%}
+                  {%- liquid
+                    assign size_variant = null
+                    assign size_available = false
+                    if single_option
+                      for candidate in card_product.variants
+                        if candidate.option1 == size_value
+                          assign size_variant = candidate
+                          assign size_available = candidate.available
+                          break
+                        endif
+                      endfor
+                    endif
+                  -%}
+                  {%- if single_option and size_variant -%}
+                    <button
+                      type="button"
+                      class="card__size card__size--button"
+                      data-variant-id="{{ size_variant.id }}"
+                      {% unless size_available %}
+                        disabled aria-disabled="true"
+                      {% endunless %}
+                      aria-label="{{ size_option.name | escape }} {{ size_value | escape }}"
+                    >
+                      {{- size_value -}}
+                    </button>
+                  {%- else -%}
+                    <span class="card__size">{{ size_value }}</span>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+              <p class="card__sizes-status" role="status" aria-live="polite"></p>
+            {%- endif -%}
+
+            {%- if colour_option_index > 0 -%}
+              {%- assign colour_option = card_product.options_with_values[colour_option_index | minus: 1] -%}
+              <div class="card__swatches" aria-label="{{ colour_option.name | escape }}">
+                {%- for colour_value in colour_option.values -%}
+                  <span
+                    class="card__swatch"
+                    title="{{ colour_value | escape }}"
+                    {% if colour_value.swatch.image %}
+                      style="background-image: url({{ colour_value.swatch.image | image_url: width: 40 }});"
+                    {% elsif colour_value.swatch.color %}
+                      style="background-color: {{ colour_value.swatch.color }};"
+                    {% else %}
+                      style="background-color: {{ colour_value | downcase | replace: ' ', '' | escape }};"
+                    {% endif %}
+                  >
+                    <span class="visually-hidden">{{ colour_value }}</span>
+                  </span>
+                {%- endfor -%}
+              </div>
+            {%- endif -%}
+
             {%- if card_product.quantity_price_breaks_configured? -%}
               {% if card_product.variants.size == 1 and quick_add == 'bulk' %}
                 {% liquid
@@ -324,7 +418,7 @@
                   aria-controls="CardSizes-{{ section_id }}-{{ card_product.id }}"
                   aria-label="{{ 'products.product.add_to_cart' | t }} — {{ card_product.title | escape }}"
                 >
-                  <span class="quick-add__label">{{ 'products.product.add_to_cart' | t }}</span>
+                  <span class="quick-add__label">Add to bag</span>
                   {%- render 'loading-spinner' -%}
                 </button>
 
@@ -380,7 +474,7 @@
                   data-product-url="{{ card_product.url }}"
                   title="{{ 'products.product.choose_options' | t }}"
                 >
-                  <span class="quick-add__label">{{ 'products.product.choose_options' | t }}</span>
+                  <span class="quick-add__label">Add to bag</span>
                   {%- render 'loading-spinner' -%}
                 </button>
               </modal-opener>
@@ -438,7 +532,7 @@
                   >
                     <span class="quick-add__label">
                       {%- if card_product.selected_or_first_available_variant.available -%}
-                        {{ 'products.product.add_to_cart' | t }}
+                        Add to bag
                       {%- else -%}
                         {{ 'products.product.sold_out' | t }}
                       {%- endif -%}
@@ -503,7 +597,7 @@
                   data-product-url="{{ card_product.url }}"
                   title="{{ 'products.product.choose_options' | t }}"
                 >
-                  <span class="quick-add__label">{{ 'products.product.choose_options' | t }}</span>
+                  <span class="quick-add__label">Add to bag</span>
                   {%- render 'loading-spinner' -%}
                 </button>
               </modal-opener>

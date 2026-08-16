@@ -3,9 +3,18 @@
 {{ 'component-price.css' | asset_url | stylesheet_tag }}
 
 {% style %}
-  .collection.page-width{
-    padding:0 0.5rem;
+  /* Full-bleed product grid (reference layout). Declared here rather than in
+     custom-fixes.css because a section stylesheet renders inside <body> and
+     therefore wins on source order. */
+  .collection.page-width {
+    padding: 0;
+    max-width: 100%;
+  }
 
+  @media screen and (min-width: 990px) {
+    .collection.page-width {
+      padding: 0 1rem;
+    }
   }
 {% endstyle %}
 

@@ -18,8 +18,21 @@
   var reduceMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  var canHover =
+    window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  var autoplayEnabled = !reduceMotion && !canHover;
+
   var mounted = new WeakSet();
   var sliderObserver = null;
+
+  var ARROW_PREV =
+    '<svg viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M10.5 1.5L2 10l8.5 8.5" stroke="currentColor" stroke-width="1.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var ARROW_NEXT =
+    '<svg viewBox="0 0 12 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+    '<path d="M1.5 1.5L10 10l-8.5 8.5" stroke="currentColor" stroke-width="1.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
   function galleryUrls(card) {
     var node = card.querySelector('script.card-gallery-data');
@@ -105,7 +118,37 @@
 
     slider.appendChild(track);
     slider.appendChild(dots);
+
+    // Manual controls for pointer devices. Built for every card so a mouse
+    // plugged into a touch device still gets them, but only revealed by the
+    // `(hover: hover)` media query in CSS.
+    var prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'card-slider__nav card-slider__nav--prev';
+    prev.setAttribute('aria-label', 'Previous image');
+    prev.innerHTML = ARROW_PREV;
+
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'card-slider__nav card-slider__nav--next';
+    next.setAttribute('aria-label', 'Next image');
+    next.innerHTML = ARROW_NEXT;
+
+    slider.appendChild(prev);
+    slider.appendChild(next);
     media.appendChild(slider);
+
+    function step(delta) {
+      return function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        pause(card.__slider, false);
+        goTo(card.__slider, card.__slider.index + delta);
+      };
+    }
+
+    prev.addEventListener('click', step(-1));
+    next.addEventListener('click', step(1));
 
     var state = {
       card: card,
@@ -130,7 +173,9 @@
   }
 
   function play(state) {
-    if (!state || state.timer || reduceMotion || state.count < 2) return;
+    // Desktop is manual-only: arrows drive the slider, nothing moves on its own.
+    if (!autoplayEnabled) return;
+    if (!state || state.timer || state.count < 2) return;
     state.timer = window.setInterval(function () {
       goTo(state, state.index + 1);
     }, SLIDE_MS);
@@ -152,13 +197,14 @@
         entries.forEach(function (entry) {
           var card = entry.target;
           if (entry.isIntersecting) {
+            // Mount either way so the arrows exist; play() no-ops on desktop.
             play(buildSlider(card));
           } else if (card.__slider) {
-            pause(card.__slider, true);
+            pause(card.__slider, autoplayEnabled);
           }
         });
       },
-      { rootMargin: '80px 0px', threshold: 0.35 }
+      { rootMargin: '200px 0px', threshold: 0.01 }
     );
   }
 
@@ -174,21 +220,24 @@
     }
 
     card.addEventListener('mouseenter', function () {
-      var s = buildSlider(card);
-      pause(s, false);
-      goTo(s, s ? s.index + 1 : 0);
+      // Ensure the arrows are present the moment a pointer arrives.
+      buildSlider(card);
+      pause(card.__slider, false);
     });
     card.addEventListener('mouseleave', function () {
       play(card.__slider);
     });
-    card.addEventListener(
-      'touchstart',
-      function () {
-        var s = buildSlider(card);
-        goTo(s, s ? s.index + 1 : 0);
-      },
-      { passive: true }
-    );
+
+    if (!canHover) {
+      card.addEventListener(
+        'touchstart',
+        function () {
+          var s = buildSlider(card);
+          if (s) goTo(s, s.index + 1);
+        },
+        { passive: true }
+      );
+    }
   }
 
   /* ====================================================================== */
@@ -211,7 +260,7 @@
   }
 
   function setStatus(popup, message, state) {
-    var el = popup.querySelector('.card-sizes__status');
+    var el = popup.querySelector('.card-sizes__status, .card__sizes-status');
     if (!el) return;
     el.textContent = message || '';
     if (state) {
@@ -306,6 +355,24 @@
       });
   }
 
+  function setupInlineSizes(card) {
+    var group = card.querySelector('.card__sizes--interactive');
+    if (!group || group.__bound) return;
+    group.__bound = true;
+
+    var status = card.querySelector('.card__sizes-status');
+    var host = status ? status.parentNode : card;
+
+    group.querySelectorAll('.card__size--button').forEach(function (chip) {
+      chip.addEventListener('click', function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (chip.disabled) return;
+        addToCart(chip.getAttribute('data-variant-id'), chip, host);
+      });
+    });
+  }
+
   function setupSizePopup(card) {
     var toggle = card.querySelector('.card-sizes__toggle');
     var popup = card.querySelector('.card-sizes');
@@ -380,6 +447,7 @@
     var scope = root && root.querySelectorAll ? root : document;
     scope.querySelectorAll(CARD_SELECTOR).forEach(setupSlider);
     scope.querySelectorAll('.card-wrapper').forEach(setupSizePopup);
+    scope.querySelectorAll('.card-wrapper').forEach(setupInlineSizes);
   }
 
   function boot() {

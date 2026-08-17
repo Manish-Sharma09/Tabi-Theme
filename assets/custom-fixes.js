@@ -43,9 +43,20 @@
     return desktopMQ ? desktopMQ.matches : window.innerWidth >= 750;
   }
 
+  /* Product pages keep their recommendation cards still. The shopper is already
+     looking at one product, and a grid of thumbnails moving on its own below
+     the gallery competes with the gallery they are actually using. Manual swipe
+     and the desktop arrows still work there — only the timer is off.
+
+     Read lazily rather than cached at parse time so it cannot depend on whether
+     <body> existed when this file ran. */
+  function isProductPage() {
+    return !!(document.body && document.body.getAttribute('data-page-type') === 'product');
+  }
+
   function autoplayAllowed() {
     // Desktop is manual-only (arrows). Touch/mobile autoplays.
-    return !reduceMotion && !isDesktop();
+    return !reduceMotion && !isDesktop() && !isProductPage();
   }
 
   var mounted = new WeakSet();
@@ -348,6 +359,20 @@
      the clones and are legal here; normalise() snaps them back afterwards. */
   function move(state, delta) {
     if (!state || state.count < 2) return;
+
+    /* Normalise BEFORE applying the delta.
+
+       Both things that would otherwise do it — transitionend and the wrapTimer
+       — run later than the next possible move. So a shopper swiping two or
+       three times in quick succession added delta on top of a clone position
+       and walked straight off the end of the track: pos became count + 2 and
+       beyond, where no slides exist. The track went blank and the carousel
+       looked stuck on the first image.
+
+       Hopping to the clone's real twin first keeps pos inside 0..count + 1 no
+       matter how fast the swipes arrive. The hop is invisible because a clone
+       and its twin hold the same picture. */
+    normalise(state);
     setPos(state, state.pos + delta, true);
     syncDots(state);
 

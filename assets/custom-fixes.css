@@ -875,13 +875,24 @@ table {
 /* MUST be positioned with a z-index above the card link overlay (z-index: 1),
    otherwise the stretched <a>::after covers the chips and every click
    navigates to the product page instead of adding the size to the bag. */
+/* A grid, not wrapped flex.
+
+   Flex-wrap packed the chips left-to-right and let each row break wherever it
+   ran out of room, so an 8-size product produced a ragged "18m 2y 3y 4y 5y /
+   6y 7y 8y" block whose second row lined up with nothing above it. Sizes are
+   tabular data and read far better in columns.
+
+   auto-fit + minmax keeps as many even columns as the card can hold and
+   collapses to fewer on narrow cards, with every chip in a row sharing a
+   column edge with the row above. */
 .card__sizes {
   position: relative;
   z-index: 2;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(3.2rem, 1fr));
   align-items: center;
-  gap: 0.9rem;
+  justify-items: start;
+  gap: 0.6rem 0.4rem;
   margin-bottom: 0.9rem;
 }
 
@@ -1087,4 +1098,23 @@ table {
    -------------------------------------------------------------------------- */
 .cf-img-fluid {
   height: auto;
+}
+
+/* --------------------------------------------------------------------------
+   PRODUCT PAGE — QUIETER RECOMMENDATION CARDS
+
+   On a product page the shopper is already deciding on one item. The size row
+   on every "You may also like" card repeats the size language of the variant
+   picker they are actually using and crowds the grid, so it comes off there.
+
+   Scoped to the body's data-page-type (set in layout/theme.liquid) rather than
+   to the section, because the same card snippet is rendered by related
+   products, recently viewed and any custom recommendation section.
+
+   The card's own variant picker is .product-form__input / swatch markup, not
+   .card__sizes, so nothing the shopper needs to buy with is affected.
+   -------------------------------------------------------------------------- */
+[data-page-type='product'] .card__sizes,
+[data-page-type='product'] .card__sizes-status {
+  display: none;
 }

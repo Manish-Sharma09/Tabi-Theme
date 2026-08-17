@@ -129,16 +129,23 @@
 
     media.appendChild(slider);
 
-    /* ARROWS GO OUTSIDE .card__media ON PURPOSE.
-       `.ratio` is `display: flex`, so `.card__media` is a flex item — and a
-       flex item carrying `z-index: 0` (Dawn's Safari border fix) creates a
-       stacking context. Anything inside it is trapped below the stretched card
-       link at z-index 1, which is why arrow clicks opened the product page.
-       Mounting on `.card__inner` puts the controls in the same stacking context
-       as the link, where a higher z-index actually wins. The controls are
-       absolutely positioned in CSS so they do not become a flex sibling of the
-       image (that squashed the card). */
-    var host = card.querySelector('.card__inner') || media;
+    /* ARROWS ARE MOUNTED OUTSIDE .card-wrapper, ON THE GRID ITEM.
+
+       Dawn's whole-card link is `.card__heading a::after`, stretched over
+       .card-wrapper at z-index 1. Two earlier attempts to out-rank it from
+       inside the card failed: inside .card__media the arrows are trapped
+       (it is a flex item carrying z-index: 0, so it opens its own stacking
+       context), and inside .card__inner the z-index did not win in practice.
+
+       Mounting on the <li class="grid__item"> makes the arrows a LATER SIBLING
+       of .card-wrapper in the same stacking context, with a higher z-index.
+       Later sibling + higher z-index cannot be painted under — there is no
+       stacking subtlety left to get wrong.
+
+       The trade-off is that the controls no longer inherit the image box, so
+       their height is mirrored from .card__inner with a ResizeObserver. */
+    var inner = card.querySelector('.card__inner');
+    var host = card.closest('.grid__item') || card.parentNode || inner || media;
 
     var controls = document.createElement('div');
     controls.className = 'card-slider__controls';
@@ -158,6 +165,23 @@
     controls.appendChild(prev);
     controls.appendChild(next);
     host.appendChild(controls);
+    host.classList.add('has-card-slider');
+
+    function syncControlsHeight() {
+      var box = inner || media;
+      if (!box) return;
+      var h = box.offsetHeight;
+      if (h > 0) controls.style.height = h + 'px';
+    }
+
+    syncControlsHeight();
+    if ('ResizeObserver' in window && (inner || media)) {
+      new ResizeObserver(syncControlsHeight).observe(inner || media);
+    } else {
+      window.addEventListener('resize', syncControlsHeight);
+    }
+    // Images finishing their load change the box height.
+    window.addEventListener('load', syncControlsHeight);
 
     function step(delta) {
       return function (event) {
@@ -171,18 +195,37 @@
 
     [prev, next].forEach(function (btn) {
       btn.addEventListener('click', step(btn === prev ? -1 : 1));
-      // Stop the press reaching the card link before the click even resolves.
+      /* stopPropagation only — NOT preventDefault. Calling preventDefault on
+         pointerdown suppresses the follow-up click event in some browsers,
+         which would stop the arrow working for a different reason. */
       ['pointerdown', 'mousedown', 'touchstart'].forEach(function (evt) {
         btn.addEventListener(
           evt,
           function (e) {
-            e.preventDefault();
             e.stopPropagation();
           },
-          { passive: false }
+          { passive: true }
         );
       });
     });
+
+    /* Belt and braces: intercept in the CAPTURE phase on the grid item, before
+       the card link can act on it. */
+    if (host && !host.__navCaptureBound) {
+      host.__navCaptureBound = true;
+      host.addEventListener(
+        'click',
+        function (event) {
+          var btn = event.target && event.target.closest
+            ? event.target.closest('.card-slider__nav')
+            : null;
+          if (!btn) return;
+          event.preventDefault();
+          event.stopPropagation();
+        },
+        true
+      );
+    }
 
     var state = {
       card: card,

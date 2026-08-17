@@ -1,80 +1,143 @@
+{%- comment -%}
+  Product grid column switcher.
+
+  Mobile  (<= 767px): 1 or 2 columns, DEFAULT 2
+  Desktop (>= 768px): 2, 3 or 4 columns, DEFAULT 4
+
+  The two breakpoints keep SEPARATE preferences in localStorage. The previous
+  version shared a single key and rewrote it on resize, so switching to a phone
+  overwrote the desktop choice — and a desktop choice of 4 was never clamped,
+  which is why phones rendered 4 columns.
+{%- endcomment -%}
+
 <div class="filter-buttons">
-  <button class="filter-btn new-cstm" data-cols="1">
-    <svg class="m-svg-icon--small" width="10px" height="10px" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12.5 2">
+  <button class="filter-btn mobile-only" data-cols="1" aria-label="One column">
+    <svg class="m-svg-icon--small" width="10px" height="10px" fill="none" stroke="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 12.5 2" aria-hidden="true">
       <path d="M0,1h12.5" stroke-width="1"/>
     </svg>
   </button>
-  <button class="filter-btn" data-cols="2">
-    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5.5 12.5">
-      <path id="Rectangle" d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z" class="cls-1"></path>
-      <path id="Rectangle-2" d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z" class="cls-1" data-name="Rectangle"></path>
+
+  <button class="filter-btn" data-cols="2" aria-label="Two columns">
+    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 5.5 12.5" aria-hidden="true">
+      <path d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z"/>
+      <path d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z"/>
     </svg>
   </button>
-  <button class="filter-btn desktop-only" data-cols="3">
-    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9.5 12.5">
-      <path id="Rectangle" d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z" class="cls-1"></path>
-      <path id="Rectangle-2" d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z" class="cls-1" data-name="Rectangle"></path>
-      <path id="Rectangle-3" d="M8.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0=" class="cls-1" data-name="Rectangle"></path>
+
+  <button class="filter-btn desktop-only" data-cols="3" aria-label="Three columns">
+    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9.5 12.5" aria-hidden="true">
+      <path d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z"/>
+      <path d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z"/>
+      <path d="M8.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 018.75 0z"/>
     </svg>
-  </button> 
-  <button class="filter-btn desktop-only" data-cols="4">
-    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.5 12.5">
-      <path id="Rectangle" d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z" class="cls-1"></path>
-      <path id="Rectangle-2" d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z" class="cls-1" data-name="Rectangle"></path>
-      <path id="Rectangle-3" d="M8.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 018.75 0z" class="cls-1" data-name="Rectangle"></path>
-      <path id="Rectangle-4" d="M12.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11a.76.76 0 01.75-.75z" class="cls-1" data-name="Rectangle"></path>
+  </button>
+
+  <button class="filter-btn desktop-only" data-cols="4" aria-label="Four columns">
+    <svg class="m-svg-icon--small" width="10px" height="10px" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 13.5 12.5" aria-hidden="true">
+      <path d="M.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 01.75 0z"/>
+      <path d="M4.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 014.75 0z"/>
+      <path d="M8.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11A.76.76 0 018.75 0z"/>
+      <path d="M12.75 0a.76.76 0 01.75.75v11a.76.76 0 01-.75.75.76.76 0 01-.75-.75v-11a.76.76 0 01.75-.75z"/>
     </svg>
-  </button> 
+  </button>
 </div>
 
 <script>
-  function applySavedGridLayout() {
-    const savedCols = localStorage.getItem("activeGridCols") || "3"; 
-    const productGrid = document.getElementById("product-grid");
-    const buttons = document.querySelectorAll(".filter-btn");
-    if (productGrid) {
-      productGrid.classList.remove(
-        "grid-cols-1", "grid-cols-2", "grid-cols-3", "grid-cols-4"
-      );
-      productGrid.classList.add(`grid-cols-${savedCols}`);
+  (function () {
+    'use strict';
+
+    var MOBILE_MQ = '(max-width: 767px)';
+    var KEY_DESKTOP = 'activeGridCols';
+    var KEY_MOBILE = 'activeGridColsMobile';
+    var DESKTOP_DEFAULT = '4';
+    var MOBILE_DEFAULT = '2';
+    var ALL = ['grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'grid-cols-4'];
+
+    var mq = window.matchMedia(MOBILE_MQ);
+
+    function isMobile() {
+      return mq.matches;
     }
-    buttons.forEach((btn) => {
-      btn.classList.remove("active");
-      if (btn.getAttribute("data-cols") === savedCols) {
-        btn.classList.add("active");
+    function key() {
+      return isMobile() ? KEY_MOBILE : KEY_DESKTOP;
+    }
+    function allowed() {
+      return isMobile() ? ['1', '2'] : ['2', '3', '4'];
+    }
+    function fallback() {
+      return isMobile() ? MOBILE_DEFAULT : DESKTOP_DEFAULT;
+    }
+
+    function readPref() {
+      var value = null;
+      try {
+        value = localStorage.getItem(key());
+      } catch (e) {
+        /* private mode / storage disabled */
       }
-    });
-  }
-  function setupGridButtons() {
-    const buttons = document.querySelectorAll(".filter-btn");
-    const productGrid = document.getElementById("product-grid");
-    buttons.forEach((button) => {
-      button.addEventListener("click", function () {
-        let cols = this.getAttribute("data-cols");
-        localStorage.setItem("activeGridCols", cols);
-        applySavedGridLayout();
+      // A value that isn't valid for THIS breakpoint falls back to its default,
+      // so a stale "4" can never leak onto a phone.
+      return allowed().indexOf(value) === -1 ? fallback() : value;
+    }
+
+    function writePref(value) {
+      if (allowed().indexOf(value) === -1) return;
+      try {
+        localStorage.setItem(key(), value);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    function apply() {
+      var cols = readPref();
+      var grid = document.getElementById('product-grid');
+
+      if (grid) {
+        ALL.forEach(function (c) {
+          grid.classList.remove(c);
+        });
+        grid.classList.add('grid-cols-' + cols);
+      }
+
+      document.querySelectorAll('.filter-btn').forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-cols') === cols);
+        btn.setAttribute('aria-pressed', btn.getAttribute('data-cols') === cols ? 'true' : 'false');
       });
-    });
-    function updateGridForMobile() {
-      if (window.innerWidth <= 580) {
-        const currentCols = localStorage.getItem("activeGridCols");
-        if (currentCols === "3") {
-          localStorage.setItem("activeGridCols", "2");
-          applySavedGridLayout();
-        }
-      }
     }
-    window.addEventListener("resize", updateGridForMobile);
-    updateGridForMobile();
-  }
-  document.addEventListener("DOMContentLoaded", function () {
-    applySavedGridLayout();
-    setupGridButtons();
-  });
-  document.addEventListener("shopify:section:load", function () {
-    applySavedGridLayout();
-    setupGridButtons();
-  });
+
+    function bind() {
+      document.querySelectorAll('.filter-btn').forEach(function (btn) {
+        if (btn.dataset.gridBound) return;
+        btn.dataset.gridBound = 'true';
+        btn.addEventListener('click', function () {
+          writePref(btn.getAttribute('data-cols'));
+          apply();
+        });
+      });
+    }
+
+    function init() {
+      apply();
+      bind();
+    }
+
+    // Crossing the breakpoint only re-reads the other preference — it never
+    // overwrites it, so the desktop choice survives a trip to mobile.
+    if (mq.addEventListener) {
+      mq.addEventListener('change', apply);
+    } else if (mq.addListener) {
+      mq.addListener(apply);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+
+    document.addEventListener('shopify:section:load', init);
+  })();
 </script>
 
 <style>
@@ -83,61 +146,65 @@
     justify-content: end;
     gap: 10px;
   }
+
   .filter-btn {
     padding: 8px 15px;
     border: none;
     cursor: pointer;
     border-radius: 5px;
+    background: transparent;
   }
+
   .filter-btn.active {
     background: #000;
     color: #fff;
   }
+
+  /* Column counts only. Gutters are owned by custom-fixes.css
+     (#product-grid.product-grid) so there is one source of truth. */
   .grid-cols-1 {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 10px;
   }
+
   .grid-cols-2 {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
   }
+
   .grid-cols-3 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
   }
+
   .grid-cols-4 {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
   }
-  .filter-btn.new-cstm {
+
+  .mobile-only {
     display: none;
   }
+
   @media (max-width: 767px) {
-    .grid-cols-1, .grid-cols-2 {
-      display: grid;
+    .mobile-only {
+      display: inline-block;
     }
+
     .desktop-only {
       display: none;
     }
-    .grid-cols-3 {
-      display: grid;
+
+    /* Hard clamp. Even if a stale grid-cols-3/4 class survives — a cached page,
+       a theme-editor re-render, JS disabled — a phone can never render more
+       than 2 columns. */
+    .grid-cols-3,
+    .grid-cols-4 {
       grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
-    .filter-btn.new-cstm {
-      display: block;
     }
   }
+
   @media (min-width: 768px) {
-    .grid-cols-3 {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
     .filter-btn.desktop-only {
       display: inline-block;
     }

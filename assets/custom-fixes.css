@@ -426,27 +426,26 @@ script.card-gallery-data {
   visibility: hidden;
 }
 
-/* Mounted on .card__inner, NOT inside .card__media.
-   Why outside: `.ratio` is `display: flex`, so .card__media is a flex item —
-   and a flex item with `z-index: 0` (Dawn's Safari border fix) creates a
-   stacking context. Anything inside it is trapped below the stretched card
-   link at z-index 1, which is why arrow clicks opened the product page.
+/* Mounted on the <li class="grid__item">, OUTSIDE .card-wrapper.
 
-   Why `position: absolute` is spelled out here: `.card__inner.ratio` is also
-   a flex CONTAINER, and this version of Dawn has no `.ratio > *` rule to
-   absolutely position its children. Left in normal flow the controls became a
-   flex sibling of the image and squashed the whole card. Taking them out of
-   flow costs the layout nothing. */
+   Dawn's whole-card link is `.card__heading a::after` stretched over
+   .card-wrapper at z-index 1. Placing the arrows anywhere inside the card
+   meant relying on stacking rules that kept not holding in practice —
+   .card__media opens its own stacking context (flex item + z-index: 0), and
+   even .card__inner did not reliably out-rank the overlay.
+
+   As a LATER SIBLING of .card-wrapper with a higher z-index, the arrows cannot
+   be painted under it. Height is mirrored from .card__inner by JS
+   (ResizeObserver) since they no longer sit inside the image box. */
 .card-slider__controls {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  bottom: 0;
   width: 100%;
   height: 100%;
   margin: 0;
-  z-index: 4;
+  z-index: 6;
   display: none;
   align-items: center;
   justify-content: space-between;
@@ -485,12 +484,14 @@ script.card-gallery-data {
    matches the JS, which had been using `(hover: hover) and (pointer: fine)` —
    that reports false on touchscreen laptops, so autoplay kept running. */
 @media screen and (min-width: 750px) {
-  .card-wrapper.has-slider .card-slider__controls {
+  /* .has-slider lives on a SIBLING now, so reveal is driven by a class JS puts
+     on the grid item — not :has(), which would be a support risk. */
+  .grid__item.has-card-slider .card-slider__controls {
     display: flex;
   }
 
-  .card-wrapper.has-slider:hover .card-slider__nav,
-  .card-wrapper.has-slider:focus-within .card-slider__nav {
+  .grid__item.has-card-slider:hover .card-slider__nav,
+  .grid__item.has-card-slider:focus-within .card-slider__nav {
     opacity: 1;
   }
 

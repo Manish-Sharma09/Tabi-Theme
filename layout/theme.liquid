@@ -359,15 +359,7 @@
     <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
   </head>
 
-  {%- comment -%}
-    data-page-type lets CSS and custom-fixes.js branch per template without
-    sniffing the URL. Used to stop card autoplay and hide card size chips on
-    product pages.
-  {%- endcomment -%}
-  <body
-    class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}"
-    data-page-type="{{ request.page_type }}"
-  >
+  <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">
     <a class="skip-to-content-link button visually-hidden" href="#MainContent">
       {{ 'accessibility.skip_to_text' | t }}
     </a>

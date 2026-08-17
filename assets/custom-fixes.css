@@ -1095,7 +1095,7 @@ table {
   height: auto;
 }
 
-/* The product-page-only rule that used to hide .card__sizes lived here. It is
-   redundant now that card-product.liquid does not render the size row on any
-   page at all. body[data-page-type] stays in layout/theme.liquid — it is still
-   what tells custom-fixes.js to leave card autoplay off on product pages. */
+/* A product-page-only rule that hid .card__sizes lived here. Redundant now that
+   card-product.liquid renders no size row on any page. The body[data-page-type]
+   hook it relied on is gone too — card autoplay is off everywhere via the
+   AUTOPLAY flag in custom-fixes.js, so nothing needs to branch per template. */

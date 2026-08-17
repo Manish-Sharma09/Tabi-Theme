@@ -13,15 +13,24 @@
   /* A. CARD IMAGE SLIDER                                                    */
   /* ====================================================================== */
 
-  /* How long each image is held before the next one slides in. The 0.7s
-     transition runs inside this window, so the visible "rest" on each image is
-     roughly SLIDE_MS minus 700ms. Raise it for a slower carousel. */
+  /* AUTOPLAY IS OFF — the card carousel is manual only.
+
+     Shoppers advance it themselves: swipe on any device, or the hover arrows on
+     desktop. Nothing moves on its own, on any page or viewport.
+
+     Every path that could start motion — play(), scheduleResume(), the
+     breakpoint handler and the IntersectionObserver — funnels through
+     autoplayAllowed() below, so this flag is the entire switch. The timer
+     machinery underneath is left intact but dormant; flip this to true to bring
+     it back at the pacing SLIDE_MS and RESUME_MS describe. */
+  var AUTOPLAY = false;
+
+  /* Dormant while AUTOPLAY is false: how long each image would be held before
+     the next slid in. The 0.7s transition runs inside this window. */
   var SLIDE_MS = 4800;
 
-  /* After a manual swipe or arrow press, autoplay stays out of the way this
-     long before taking over again. Previously a manual move killed autoplay
-     permanently on touch (there is no mouseleave on a phone), so the carousel
-     went dead after the first tap. */
+  /* Dormant while AUTOPLAY is false: how long autoplay would stay out of the
+     way after a manual swipe or arrow press before taking over again. */
   var RESUME_MS = 4500;
 
   /* Horizontal travel that turns a press into a swipe. Capped against the card
@@ -43,20 +52,12 @@
     return desktopMQ ? desktopMQ.matches : window.innerWidth >= 750;
   }
 
-  /* Product pages keep their recommendation cards still. The shopper is already
-     looking at one product, and a grid of thumbnails moving on its own below
-     the gallery competes with the gallery they are actually using. Manual swipe
-     and the desktop arrows still work there — only the timer is off.
-
-     Read lazily rather than cached at parse time so it cannot depend on whether
-     <body> existed when this file ran. */
-  function isProductPage() {
-    return !!(document.body && document.body.getAttribute('data-page-type') === 'product');
-  }
-
+  /* The single gate on self-driven motion. Returns false outright while
+     AUTOPLAY is off, which is what makes the carousel manual-only. */
   function autoplayAllowed() {
-    // Desktop is manual-only (arrows). Touch/mobile autoplays.
-    return !reduceMotion && !isDesktop() && !isProductPage();
+    if (!AUTOPLAY) return false;
+    // Desktop would stay manual-only (arrows); touch/mobile would autoplay.
+    return !reduceMotion && !isDesktop();
   }
 
   var mounted = new WeakSet();
@@ -392,7 +393,7 @@
   }
 
   function play(state) {
-    // Desktop is manual-only: arrows drive the slider, nothing moves on its own.
+    // No-op while AUTOPLAY is off: swipes and arrows drive the slider instead.
     if (!autoplayAllowed()) return;
     if (!state || state.timer || state.count < 2) return;
     state.timer = window.setInterval(function () {
@@ -442,7 +443,7 @@
         entries.forEach(function (entry) {
           var card = entry.target;
           if (entry.isIntersecting) {
-            // Mount either way so the arrows exist; play() no-ops on desktop.
+            // Mount so the arrows and swipe exist; play() is a no-op right now.
             play(buildSlider(card));
           } else if (card.__slider) {
             pause(card.__slider, autoplayAllowed());

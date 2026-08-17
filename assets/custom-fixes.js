@@ -13,10 +13,10 @@
   /* A. CARD IMAGE SLIDER                                                    */
   /* ====================================================================== */
 
-  /* How long each image is held before the next one slides in. The 0.6s
+  /* How long each image is held before the next one slides in. The 0.7s
      transition runs inside this window, so the visible "rest" on each image is
-     roughly SLIDE_MS minus 600ms. Raise it for a slower carousel. */
-  var SLIDE_MS = 3200;
+     roughly SLIDE_MS minus 700ms. Raise it for a slower carousel. */
+  var SLIDE_MS = 4800;
 
   /* After a manual swipe or arrow press, autoplay stays out of the way this
      long before taking over again. Previously a manual move killed autoplay
@@ -112,20 +112,29 @@
     var track = document.createElement('div');
     track.className = 'card-slider__track';
 
-    /* Blank slides are deliberate: Dawn's own <img> sits directly beneath the
-       transparent slider, so a blank slide renders as the product's main image.
-       That is why the card can never go empty even if every CDN request fails —
-       and why the tail clone below is blank too. */
-    function makeSlide(url, blank) {
+    /* EVERY slide carries a real <img> — including slide 0 and both clones.
+
+       This is the fix for "the first image appears instead of sliding in". The
+       earlier build left slide 0 blank on purpose and let Dawn's own <img> show
+       through the transparent slider. But that <img> is NOT part of the track,
+       so it could not move: every other slide animated across a picture that
+       sat perfectly still, and looping back round to it read as a hard cut
+       rather than a slide.
+
+       Dawn's <img> still sits underneath as the safety net. A slide whose image
+       404s gets .is-broken, turns transparent, and the product image shows
+       through exactly as before — the card can still never render empty. */
+    function makeSlide(url, eager) {
       var slide = document.createElement('div');
       slide.className = 'card-slider__slide';
-      if (blank || !url) return slide;
+      if (!url) return slide;
 
       var img = document.createElement('img');
       img.className = 'card-slider__img';
       img.alt = '';
       img.decoding = 'async';
-      img.loading = 'lazy';
+      // The resting slide and its neighbour are on screen straight away.
+      img.loading = eager ? 'eager' : 'lazy';
       img.addEventListener('error', function () {
         slide.classList.add('is-broken');
       });
@@ -145,15 +154,13 @@
        back to position 1 with transitions switched off, so the shopper never
        sees the rewind. Mirror image for the head clone when going backwards.
 
-       The previous build had no clones and set translateX(-index * 100%) with
-       index wrapped by modulo — so going from the last image back to the first
-       animated backwards through every slide in between. That long reverse
-       sweep was the stutter. */
-    track.appendChild(makeSlide(urls[urls.length - 1], false));
+       Positions 1 and count + 1 hold the same picture, as do positions 0 and
+       count. That is precisely what makes the hop between them invisible. */
+    track.appendChild(makeSlide(urls[urls.length - 1], true));
     urls.forEach(function (url, i) {
       track.appendChild(makeSlide(url, i === 0));
     });
-    track.appendChild(makeSlide(urls[0], true));
+    track.appendChild(makeSlide(urls[0], false));
 
     card.classList.add('has-slider');
 
@@ -354,7 +361,8 @@
         state.wrapTimer = null;
         normalise(state);
       },
-      reduceMotion ? 0 : 700
+      // Comfortably after the 0.7s transition so this never races transitionend.
+      reduceMotion ? 0 : 950
     );
   }
 

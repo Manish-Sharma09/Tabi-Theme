@@ -1530,12 +1530,9 @@ a.cstm-header-con {
 
   /* 2 — logo takes the slack, which is what pushes the icons right.
 
-     BOTH selectors are required. Dawn only wraps the logo in
-     <h1 class="header__heading"> on the homepage (one h1 per page, for SEO):
-
-         {%- if request.page_type == 'index' -%}<h1 class="header__heading">{%- endif -%}
-           <a class="header__heading-link"> ... </a>
-         {%- if request.page_type == 'index' -%}</h1>{%- endif -%}
+     BOTH selectors are required. Dawn only wraps the logo in an
+     h1.header__heading on the homepage (one h1 per page, for SEO) — the
+     wrapper is emitted inside a request.page_type == 'index' conditional.
 
      On every other template there is no .header__heading element at all — the
      bare <a class="header__heading-link"> is the flex child. Targeting only
@@ -1579,23 +1576,21 @@ a.cstm-header-con {
     margin: 0 auto;
   }
 
-  /* The logo is out of flow now, so the icon pair needs pushing to the right
-     edge itself. */
-  header.header.page-width .header_link {
-    margin-left: auto;
-  }
-
   /* Keep room for the logo even though it no longer contributes height. */
   header.header.page-width {
     min-height: 5.6rem;
   }
 
-  /* 3 — search */
+  /* 3 — search.
+     The logo is absolutely positioned and no longer occupies flex space, so
+     this auto margin is what pushes the search + cart pair to the right edge.
+     It must live on THIS rule: a separate `margin-left: auto` declared earlier
+     was being wiped by the `margin: 0` shorthand here. */
   header.header.page-width .header_link {
     order: 3;
     flex: 0 0 auto;
     display: block;
-    margin: 0;
+    margin: 0 0 0 auto;
   }
 
   /* 4 — cart, hard right */

@@ -60,14 +60,16 @@
             <a href="{{ block.settings.url-img }}">
           <div class="video1">
             <img
-              src="{{ block.settings.image | img_url: '300x' }}"
+              src="{{ block.settings.image | image_url: width: 300 }}"
               srcset="
-                {{ block.settings.image | img_url: '300x' }} 300w,
-                {{ block.settings.image | img_url: '600x' }} 600w,
-                {{ block.settings.image | img_url: '900x' }} 900w
+                {{ block.settings.image | image_url: width: 300 }} 300w,
+                {{ block.settings.image | image_url: width: 600 }} 600w,
+                {{ block.settings.image | image_url: width: 900 }} 900w
               "
               sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, 33vw"
-              alt="{{ block.settings.image.alt }}"
+              alt="{{ block.settings.image.alt | escape }}"
+              width="{{ block.settings.image.width }}"
+              height="{{ block.settings.image.height }}"
               loading="lazy"
             >
           </div>

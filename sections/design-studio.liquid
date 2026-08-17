@@ -8,12 +8,18 @@
     </div>
   <div class="fordesktop" style="position:relative;background: {{ section.settings.color-bg }};
     {% if section.settings.background_image != blank %}
-      background-image: url({{ section.settings.background_image | img_url: '1920x1080' }});
+      background-image: url({{ section.settings.background_image | image_url: width: 1920, height: 1080 }});
       background-size: cover;
       background-position: center;
     {% endif %}">
     {% if section.settings.image-bg  %}
-    <img src="{{ section.settings.image-bg | image_url }}">
+    <img
+      src="{{ section.settings['image-bg'] | image_url: width: section.settings['image-bg'].width }}"
+      alt="{{ section.settings['image-bg'].alt | escape }}"
+      width="{{ section.settings['image-bg'].width }}"
+      height="{{ section.settings['image-bg'].height }}"
+      loading="lazy"
+    >
       {% elsif section.settings.video-bg %}
 
       {{ section.settings.video-bg | video_tag: autoplay:true, muted:true ,loop:true  }}
@@ -43,7 +49,13 @@
           {{ block.settings.video | video_tag: autoplay:true, muted:true ,loop:true}}
         {% elsif block.settings.img-ex != blank %}
   
-  <img src="{{ block.settings.img-ex | image_url}}">
+  <img
+    src="{{ block.settings['img-ex'] | image_url: width: block.settings['img-ex'].width }}"
+    alt="{{ block.settings['img-ex'].alt | escape }}"
+    width="{{ block.settings['img-ex'].width }}"
+    height="{{ block.settings['img-ex'].height }}"
+    loading="lazy"
+  >
   
 {% endif %}
        
@@ -56,7 +68,13 @@
   <div class="formobilesection">
     
        {% if section.settings.image-bg  %}
-    <img src="{{ section.settings.image-bg | image_url }}">
+    <img
+      src="{{ section.settings['image-bg'] | image_url: width: section.settings['image-bg'].width }}"
+      alt="{{ section.settings['image-bg'].alt | escape }}"
+      width="{{ section.settings['image-bg'].width }}"
+      height="{{ section.settings['image-bg'].height }}"
+      loading="lazy"
+    >
       {% elsif section.settings.video-bg %}
 
       {{ section.settings.video-bg | video_tag: autoplay:true, muted:true ,loop:true  }}
@@ -77,7 +95,13 @@
           {{ block.settings.video | video_tag: autoplay:true, muted:true ,loop:true}}
         {% elsif block.settings.img-ex != blank %}
   
-  <img src="{{ block.settings.img-ex | image_url}}">
+  <img
+    src="{{ block.settings['img-ex'] | image_url: width: block.settings['img-ex'].width }}"
+    alt="{{ block.settings['img-ex'].alt | escape }}"
+    width="{{ block.settings['img-ex'].width }}"
+    height="{{ block.settings['img-ex'].height }}"
+    loading="lazy"
+  >
   
 {% endif %}
         

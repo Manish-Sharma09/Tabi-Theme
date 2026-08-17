@@ -77,7 +77,13 @@
   <div class="shop-by-category">
     {% for block in section.blocks %}
       <a href="{{ block.settings.url }}">
-        <img src="{{ block.settings.image  | img_url: 'master' }}">
+        <img
+          src="{{ block.settings.image | image_url: width: block.settings.image.width }}"
+          alt="{{ block.settings.image.alt | default: block.settings.text | escape }}"
+          width="{{ block.settings.image.width }}"
+          height="{{ block.settings.image.height }}"
+          loading="lazy"
+        >
         <div>{{ block.settings.text }}</div>
       </a>
     {% endfor %}

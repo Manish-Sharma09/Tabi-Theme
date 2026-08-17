@@ -9,7 +9,6 @@
     assign current_variant = product.selected_or_first_available_variant
     assign product_form_id = 'product-form-' | append: section.id
     assign image = current_variant.image | default: product.featured_image
-    assign img_size = section.settings.img_width | append: 'x' | append: section.settings.img_height
   %}
 
   <style>
@@ -174,7 +173,7 @@
         <div class="product-content">
           {% if section.settings.show_img %}
             <img
-              src="{{ image | img_url: img_size, crop: 'center' }}"
+              src="{{ image | image_url: width: section.settings.img_width, height: section.settings.img_height, crop: 'center' }}"
               class=""
               width="{{ section.settings.img_width }}"
               height="{{ section.settings.img_height }}"
@@ -208,7 +207,7 @@
                     {% assign variant_image = variant.image | default: product.featured_image %}
                     <option
                       value="{{ variant.id }}"
-                      data-img="{{ variant_image | img_url: img_size }}"
+                      data-img="{{ variant_image | image_url: width: section.settings.img_width, height: section.settings.img_height }}"
                       {% if current_variant.id == variant.id %}
                         selected
                       {% endif %}
@@ -233,7 +232,7 @@
                     <span class="visually-hidden">
                       {{- 'products.product.quantity.decrease' | t: product: product.title | escape -}}
                     </span>
-                    {% render 'icon-minus' %}
+                    <span class="svg-wrapper">{{ 'icon-minus.svg' | inline_asset_content }}</span>
                   </button>
                   <input
                     class="quantity__input"
@@ -248,7 +247,7 @@
                     <span class="visually-hidden">
                       {{- 'products.product.quantity.increase' | t: product: product.title | escape -}}
                     </span>
-                    {% render 'icon-plus' %}
+                    <span class="svg-wrapper">{{ 'icon-plus.svg' | inline_asset_content }}</span>
                   </button>
                 </quantity-input>
               {% endif %}

@@ -118,7 +118,7 @@
       {% assign current_collection = product.collections.first %}
       {% if current_collection %}
         <nav class="breadcrumb onlydesktopbredcrumb" role="navigation" aria-label="breadcrumbs">
-          <a href="/" title="Home">Home</a>
+          <a href="{{ routes.root_url }}" title="Home">Home</a>
           <span aria-hidden="true">›</span>
           <a href="{{ current_collection.url }}" title="{{ current_collection.title }}">
             {{- current_collection.title -}}
@@ -177,7 +177,7 @@
                   {% assign current_collection = product.collections.first %}
                   {% if current_collection %}
                     <nav class="breadcrumb onlymobile" role="navigation" aria-label="breadcrumbs">
-                      <a href="/" title="Home">Home</a>
+                      <a href="{{ routes.root_url }}" title="Home">Home</a>
                       <span aria-hidden="true">›</span>
                       <a href="{{ current_collection.url }}" title="{{ current_collection.title }}">
                         {{- current_collection.title -}}
@@ -801,14 +801,6 @@
       </script>
       <script src="{{ 'product-model.js' | asset_url }}" defer></script>
     {%- endif -%}
-
-    {%- liquid
-      if product.selected_or_first_available_variant.featured_media
-        assign seo_media = product.selected_or_first_available_variant.featured_media
-      else
-        assign seo_media = product.featured_media
-      endif
-    -%}
 
     <script type="application/ld+json">
       {{ product | structured_data }}

@@ -204,17 +204,21 @@
           <a href="{{ block.settings.url }}">
             {% if block.settings.desktopimage != blank %}
               <img
-                src="{{ block.settings.desktopimage | img_url: 'master' }}"
+                src="{{ block.settings.desktopimage | image_url: width: block.settings.desktopimage.width }}"
                 class="desktopimage"
-                alt="{{ block.settings.alttext }}"
+                alt="{{ block.settings.alttext | escape }}"
+                width="{{ block.settings.desktopimage.width }}"
+                height="{{ block.settings.desktopimage.height }}"
                 loading="lazy"
               >
             {% endif %}
             {% if block.settings.mobileimage != blank %}
               <img
-                src="{{ block.settings.mobileimage | img_url: 'master' }}"
+                src="{{ block.settings.mobileimage | image_url: width: block.settings.mobileimage.width }}"
                 class="mobileimage"
-                alt="{{ block.settings.alttext }}"
+                alt="{{ block.settings.alttext | escape }}"
+                width="{{ block.settings.mobileimage.width }}"
+                height="{{ block.settings.mobileimage.height }}"
                 loading="lazy"
               >
             {% endif %}

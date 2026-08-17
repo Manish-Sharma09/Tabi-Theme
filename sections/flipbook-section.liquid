@@ -1,6 +1,6 @@
 <div class="page-color" style="background-color: {{ section.settings.background_color }};
   {% if section.settings.background_image != blank %}
-      background-image: url({{ section.settings.background_image | img_url: '1920x1080' }});
+      background-image: url({{ section.settings.background_image | image_url: width: 1920, height: 1080 }});
       background-size: cover;
       background-position: center;
     {% endif %}
@@ -14,12 +14,24 @@
         <div id="p{{ forloop.index }}" class="paper">
           <div class="front">
             <div id="f{{ forloop.index }}" class="front-content">
-              <img src="{{ block.settings.front_image | img_url: 'master' }}" width="" height="">
+              <img
+                src="{{ block.settings.front_image | image_url: width: block.settings.front_image.width }}"
+                alt="{{ block.settings.front_image.alt | escape }}"
+                width="{{ block.settings.front_image.width }}"
+                height="{{ block.settings.front_image.height }}"
+                loading="lazy"
+              >
             </div>
           </div>
           <div class="back">
             <div id="b{{ forloop.index }}" class="back-content">
-              <img src="{{ block.settings.back_image | img_url: 'master' }}" width="" height="">
+              <img
+                src="{{ block.settings.back_image | image_url: width: block.settings.back_image.width }}"
+                alt="{{ block.settings.back_image.alt | escape }}"
+                width="{{ block.settings.back_image.width }}"
+                height="{{ block.settings.back_image.height }}"
+                loading="lazy"
+              >
             </div>
           </div>
         </div>
@@ -37,8 +49,22 @@
       <button id="close-grid">✖</button>
       <div class="grid-content">
         {% for block in section.blocks %}
-          <img src="{{ block.settings.front_image | img_url: 'master' }}" class="grid-image" width="" height="">
-          <img src="{{ block.settings.back_image | img_url: 'master' }}" class="grid-image" width="" height="">
+          <img
+            src="{{ block.settings.front_image | image_url: width: block.settings.front_image.width }}"
+            alt="{{ block.settings.front_image.alt | escape }}"
+            class="grid-image"
+            width="{{ block.settings.front_image.width }}"
+            height="{{ block.settings.front_image.height }}"
+            loading="lazy"
+          >
+          <img
+            src="{{ block.settings.back_image | image_url: width: block.settings.back_image.width }}"
+            alt="{{ block.settings.back_image.alt | escape }}"
+            class="grid-image"
+            width="{{ block.settings.back_image.width }}"
+            height="{{ block.settings.back_image.height }}"
+            loading="lazy"
+          >
         {% endfor %}
       </div>
     </div>

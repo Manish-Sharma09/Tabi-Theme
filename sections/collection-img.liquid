@@ -122,7 +122,14 @@
         <div class="collection-feature-wrapper {% if feature_layout == 'image_right' %}image-right{% endif %}" {{ block.shopify_attributes }}>
           <div class="collection-feature-image">
             {% if block.settings.feature_image %}
-              <img src="{{ block.settings.feature_image | img_url: 'master' }}" alt="{{ block.settings.collection_title }}" class="feature-image">
+              <img
+                src="{{ block.settings.feature_image | image_url: width: block.settings.feature_image.width }}"
+                alt="{{ block.settings.collection_title | escape }}"
+                class="feature-image"
+                width="{{ block.settings.feature_image.width }}"
+                height="{{ block.settings.feature_image.height }}"
+                loading="lazy"
+              >
             {% else %}
               {{ 'image' | placeholder_svg_tag: 'placeholder-svg' }}
             {% endif %}

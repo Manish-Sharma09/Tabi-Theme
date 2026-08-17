@@ -2,7 +2,13 @@
   {% for block in section.blocks %}
     <div class="slide">
       {% if block.settings.icon %}
-        <img src="{{ block.settings.icon | img_url: '' }}" alt="{{ block.settings.title }}" width="" height="">
+        <img
+          src="{{ block.settings.icon | image_url: width: block.settings.icon.width }}"
+          alt="{{ block.settings.icon.alt | default: block.settings.title | escape }}"
+          width="{{ block.settings.icon.width }}"
+          height="{{ block.settings.icon.height }}"
+          loading="lazy"
+        >
       {% endif %}
       <h3>{{ block.settings.title }}</h3>
       <p>{{ block.settings.description }}</p>

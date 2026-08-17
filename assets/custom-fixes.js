@@ -13,7 +13,25 @@
   /* A. CARD IMAGE SLIDER                                                    */
   /* ====================================================================== */
 
-  var SLIDE_MS = 2600;
+  /* How long each image is held before the next one slides in. The 0.6s
+     transition runs inside this window, so the visible "rest" on each image is
+     roughly SLIDE_MS minus 600ms. Raise it for a slower carousel. */
+  var SLIDE_MS = 3200;
+
+  /* After a manual swipe or arrow press, autoplay stays out of the way this
+     long before taking over again. Previously a manual move killed autoplay
+     permanently on touch (there is no mouseleave on a phone), so the carousel
+     went dead after the first tap. */
+  var RESUME_MS = 4500;
+
+  /* Horizontal travel that turns a press into a swipe. Capped against the card
+     width at the call site so narrow cards need proportionally less travel. */
+  var SWIPE_MIN = 40;
+
+  /* Movement needed before we commit to "this is a drag" at all, and the axis
+     test that keeps vertical page scrolling working. */
+  var DRAG_SLOP = 6;
+
   var CARD_SELECTOR = '.card-wrapper[data-card-slider]';
   var reduceMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -70,7 +88,10 @@
     var existing = card.querySelector('.card-slider');
     if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
     if (card.__slider) {
-      if (card.__slider.timer) window.clearInterval(card.__slider.timer);
+      var state = card.__slider;
+      if (state.timer) window.clearInterval(state.timer);
+      if (state.resumeTimer) window.clearTimeout(state.resumeTimer);
+      if (state.wrapTimer) window.clearTimeout(state.wrapTimer);
       card.__slider = null;
     }
   }
@@ -91,28 +112,48 @@
     var track = document.createElement('div');
     track.className = 'card-slider__track';
 
-    urls.forEach(function (url, i) {
+    /* Blank slides are deliberate: Dawn's own <img> sits directly beneath the
+       transparent slider, so a blank slide renders as the product's main image.
+       That is why the card can never go empty even if every CDN request fails —
+       and why the tail clone below is blank too. */
+    function makeSlide(url, blank) {
       var slide = document.createElement('div');
       slide.className = 'card-slider__slide';
+      if (blank || !url) return slide;
 
-      // Slide 0 is left EMPTY on purpose: Dawn's own <img> sits directly
-      // beneath the transparent slider, so at rest the card looks exactly as
-      // it always did and a failed CDN request can never blank the card.
-      if (i > 0) {
-        var img = document.createElement('img');
-        img.className = 'card-slider__img';
-        img.alt = '';
-        img.decoding = 'async';
-        img.loading = 'lazy';
-        img.addEventListener('error', function () {
-          slide.classList.add('is-broken');
-        });
-        img.src = url;
-        slide.appendChild(img);
-      }
+      var img = document.createElement('img');
+      img.className = 'card-slider__img';
+      img.alt = '';
+      img.decoding = 'async';
+      img.loading = 'lazy';
+      img.addEventListener('error', function () {
+        slide.classList.add('is-broken');
+      });
+      img.src = url;
+      slide.appendChild(img);
+      return slide;
+    }
 
-      track.appendChild(slide);
+    /* INFINITE TRACK
+
+       Layout: [ clone(last) ][ 0 ][ 1 ] ... [ n-1 ][ clone(0) ]
+
+       Real slide i lives at track position i + 1, so the resting position is 1.
+
+       The clones are what make the loop seamless. Advancing past the last real
+       slide lands on clone(0); the moment that transition ends the track hops
+       back to position 1 with transitions switched off, so the shopper never
+       sees the rewind. Mirror image for the head clone when going backwards.
+
+       The previous build had no clones and set translateX(-index * 100%) with
+       index wrapped by modulo — so going from the last image back to the first
+       animated backwards through every slide in between. That long reverse
+       sweep was the stutter. */
+    track.appendChild(makeSlide(urls[urls.length - 1], false));
+    urls.forEach(function (url, i) {
+      track.appendChild(makeSlide(url, i === 0));
     });
+    track.appendChild(makeSlide(urls[0], true));
 
     card.classList.add('has-slider');
 
@@ -189,8 +230,9 @@
         event.stopPropagation();
         var s = card.__slider || buildSlider(card);
         if (!s) return;
-        pause(s, false);
-        goTo(s, s.index + delta);
+        pauseFor(s);
+        move(s, delta);
+        scheduleResume(s);
       };
     }
 
@@ -237,21 +279,83 @@
       track: track,
       dots: dots.children,
       count: urls.length,
-      index: 0,
-      timer: null
+      // Track position, NOT the real slide index. Real index = pos - 1.
+      pos: 1,
+      timer: null,
+      resumeTimer: null,
+      wrapTimer: null,
+      dragging: false
     };
 
+    /* Seamless wrap: the instant a clone finishes sliding in, hop to the
+       matching real slide with transitions off. */
+    track.addEventListener('transitionend', function (event) {
+      if (event.target !== track || event.propertyName !== 'transform') return;
+      normalise(state);
+    });
+
     card.__slider = state;
+    setPos(state, 1, false);
+    syncDots(state);
     return state;
   }
 
-  function goTo(state, index) {
+  /* Move the track to an absolute position.
+
+     animate:false is the seamless-wrap hop — the transition is switched off,
+     the transform committed with a forced reflow, then transitions are handed
+     back. The reflow is load-bearing: without it the browser coalesces both
+     style writes into one frame and animates the hop, which is the rewind all
+     over again. */
+  function setPos(state, pos, animate) {
     if (!state) return;
-    state.index = ((index % state.count) + state.count) % state.count;
-    state.track.style.transform = 'translateX(-' + state.index * 100 + '%)';
-    for (var i = 0; i < state.dots.length; i++) {
-      state.dots[i].classList.toggle('is-active', i === state.index);
+    state.pos = pos;
+    var track = state.track;
+    if (!animate) track.style.transition = 'none';
+    track.style.transform = 'translateX(' + -pos * 100 + '%)';
+    if (!animate) {
+      void track.offsetHeight;
+      track.style.transition = '';
     }
+  }
+
+  function realIndex(state) {
+    return (((state.pos - 1) % state.count) + state.count) % state.count;
+  }
+
+  function syncDots(state) {
+    var active = realIndex(state);
+    for (var i = 0; i < state.dots.length; i++) {
+      state.dots[i].classList.toggle('is-active', i === active);
+    }
+  }
+
+  /* If we are parked on a clone, jump to the real slide it duplicates. */
+  function normalise(state) {
+    if (!state) return;
+    if (state.pos === 0) setPos(state, state.count, false);
+    else if (state.pos === state.count + 1) setPos(state, 1, false);
+  }
+
+  /* Relative move — the only way slides advance. Positions 0 and count + 1 are
+     the clones and are legal here; normalise() snaps them back afterwards. */
+  function move(state, delta) {
+    if (!state || state.count < 2) return;
+    setPos(state, state.pos + delta, true);
+    syncDots(state);
+
+    /* transitionend normally does the wrap, but it never fires when motion is
+       reduced (no transition to end) or if the tab is backgrounded mid-slide.
+       This timer is the backstop; it is idempotent when transitionend already
+       ran, because normalise() only acts on clone positions. */
+    if (state.wrapTimer) window.clearTimeout(state.wrapTimer);
+    state.wrapTimer = window.setTimeout(
+      function () {
+        state.wrapTimer = null;
+        normalise(state);
+      },
+      reduceMotion ? 0 : 700
+    );
   }
 
   function play(state) {
@@ -259,17 +363,43 @@
     if (!autoplayAllowed()) return;
     if (!state || state.timer || state.count < 2) return;
     state.timer = window.setInterval(function () {
-      goTo(state, state.index + 1);
+      // Never yank the track out from under a finger.
+      if (state.dragging) return;
+      move(state, 1);
     }, SLIDE_MS);
   }
 
-  function pause(state, reset) {
+  /* Stop autoplay AND any pending resume. Called the moment a shopper touches
+     the card so the timer cannot fire mid-gesture. */
+  function pauseFor(state) {
     if (!state) return;
     if (state.timer) {
       window.clearInterval(state.timer);
       state.timer = null;
     }
-    if (reset) goTo(state, 0);
+    if (state.resumeTimer) {
+      window.clearTimeout(state.resumeTimer);
+      state.resumeTimer = null;
+    }
+  }
+
+  /* Hand autoplay back once the shopper has been idle for RESUME_MS. */
+  function scheduleResume(state) {
+    if (!state || !autoplayAllowed()) return;
+    if (state.resumeTimer) window.clearTimeout(state.resumeTimer);
+    state.resumeTimer = window.setTimeout(function () {
+      state.resumeTimer = null;
+      play(state);
+    }, RESUME_MS);
+  }
+
+  function pause(state, reset) {
+    if (!state) return;
+    pauseFor(state);
+    if (reset) {
+      setPos(state, 1, false);
+      syncDots(state);
+    }
   }
 
   function createSliderObserver() {
@@ -290,6 +420,115 @@
     );
   }
 
+  /* POINTER DRAG — "manual" without needing the arrows.
+
+     The listeners live on the card, not on .card-slider, because the slider is
+     pointer-events: none so the whole-card link keeps working — which means the
+     slider itself never receives a pointer event. Anything landing on the image
+     or on Dawn's stretched link overlay bubbles up to the card either way.
+
+     A press only becomes a drag once it has travelled DRAG_SLOP px AND moved
+     further horizontally than vertically, so vertical page scrolling is
+     untouched. If the gesture turns out to be vertical we bail out for good on
+     that press. */
+  function bindDrag(card) {
+    var startX = 0;
+    var startY = 0;
+    var dx = 0;
+    var width = 1;
+    var active = false;
+    var decided = false;
+    var dragging = false;
+    var suppressClick = false;
+
+    card.addEventListener('pointerdown', function (event) {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      var state = card.__slider || buildSlider(card);
+      if (!state || state.count < 2) return;
+      active = true;
+      decided = false;
+      dragging = false;
+      dx = 0;
+      startX = event.clientX;
+      startY = event.clientY;
+      width = card.offsetWidth || 1;
+      pauseFor(state);
+    });
+
+    card.addEventListener(
+      'pointermove',
+      function (event) {
+        if (!active) return;
+        var state = card.__slider;
+        if (!state) return;
+
+        var mx = event.clientX - startX;
+        var my = event.clientY - startY;
+
+        if (!decided) {
+          if (Math.abs(mx) < DRAG_SLOP && Math.abs(my) < DRAG_SLOP) return;
+          decided = true;
+          dragging = Math.abs(mx) > Math.abs(my);
+          if (!dragging) {
+            // Vertical gesture — hand it back to the page scroller.
+            active = false;
+            return;
+          }
+          state.dragging = true;
+        }
+
+        // Track follows the finger 1:1 while the drag is live.
+        dx = mx;
+        state.track.style.transition = 'none';
+        state.track.style.transform =
+          'translateX(calc(' + -state.pos * 100 + '% + ' + dx + 'px))';
+      },
+      { passive: true }
+    );
+
+    function release() {
+      if (!active) return;
+      active = false;
+      var state = card.__slider;
+      if (!state) return;
+
+      if (dragging) {
+        state.track.style.transition = '';
+        state.dragging = false;
+
+        // Narrow cards need proportionally less travel than a flat 40px.
+        var threshold = Math.min(SWIPE_MIN, width * 0.18);
+        if (Math.abs(dx) > threshold) move(state, dx < 0 ? 1 : -1);
+        else setPos(state, state.pos, true); // snap back, gesture too small
+
+        /* The browser still fires a click after the drag; swallow it so a swipe
+           does not also navigate to the product page. */
+        suppressClick = true;
+        window.setTimeout(function () {
+          suppressClick = false;
+        }, 80);
+      }
+
+      dx = 0;
+      dragging = false;
+      scheduleResume(state);
+    }
+
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+      card.addEventListener(evt, release);
+    });
+
+    card.addEventListener(
+      'click',
+      function (event) {
+        if (!suppressClick) return;
+        event.preventDefault();
+        event.stopPropagation();
+      },
+      true
+    );
+  }
+
   function setupSlider(card) {
     if (card.__sliderBound) return;
     if (galleryUrls(card).length < 2) return;
@@ -301,24 +540,27 @@
       play(buildSlider(card));
     }
 
+    /* Cards sitting inside one of Dawn's horizontal carousels must not fight it
+       for horizontal gestures — that carousel owns them. Arrows still work. */
+    var inCarousel = !!(
+      card.closest && card.closest('.slider--mobile, .slider--tablet, slider-component')
+    );
+
+    if (!inCarousel) {
+      // Keep vertical scrolling native; we take the horizontal axis.
+      var media = card.querySelector('.card__media');
+      if (media) media.style.touchAction = 'pan-y';
+      bindDrag(card);
+    }
+
     card.addEventListener('mouseenter', function () {
       // Ensure the arrows are present the moment a pointer arrives.
       buildSlider(card);
-      pause(card.__slider, false);
+      pauseFor(card.__slider);
     });
     card.addEventListener('mouseleave', function () {
       play(card.__slider);
     });
-
-    card.addEventListener(
-      'touchstart',
-      function () {
-        if (isDesktop()) return;
-        var s = buildSlider(card);
-        if (s) goTo(s, s.index + 1);
-      },
-      { passive: true }
-    );
   }
 
   /* ====================================================================== */

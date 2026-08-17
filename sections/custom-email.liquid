@@ -2,17 +2,21 @@
   <div class="newsletter-image-wrapper">
     {% if section.settings.background_image %}
       <img 
-        src="{{ section.settings.background_image | img_url: 'master' }}" 
-        alt="Newsletter Background Desktop" 
-        class="newsletter-bg-img newsletter-bg-desktop" 
+        src="{{ section.settings.background_image | image_url: width: section.settings.background_image.width }}"
+        alt="Newsletter Background Desktop"
+        class="newsletter-bg-img newsletter-bg-desktop"
+        width="{{ section.settings.background_image.width }}"
+        height="{{ section.settings.background_image.height }}"
         loading="lazy"
       >
     {% endif %}
     {% if section.settings.mobile_background_image %}
       <img 
-        src="{{ section.settings.mobile_background_image | img_url: 'master' }}" 
-        alt="Newsletter Background Mobile" 
-        class="newsletter-bg-img newsletter-bg-mobile" 
+        src="{{ section.settings.mobile_background_image | image_url: width: section.settings.mobile_background_image.width }}"
+        alt="Newsletter Background Mobile"
+        class="newsletter-bg-img newsletter-bg-mobile"
+        width="{{ section.settings.mobile_background_image.width }}"
+        height="{{ section.settings.mobile_background_image.height }}"
         loading="lazy"
       >
     {% endif %}

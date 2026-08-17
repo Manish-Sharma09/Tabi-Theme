@@ -1528,13 +1528,26 @@ a.cstm-header-con {
     justify-self: start;
   }
 
-  /* 2 — logo takes the slack, which is what pushes the icons right */
-  header.header.page-width .header__heading {
+  /* 2 — logo takes the slack, which is what pushes the icons right.
+
+     BOTH selectors are required. Dawn only wraps the logo in
+     <h1 class="header__heading"> on the homepage (one h1 per page, for SEO):
+
+         {%- if request.page_type == 'index' -%}<h1 class="header__heading">{%- endif -%}
+           <a class="header__heading-link"> ... </a>
+         {%- if request.page_type == 'index' -%}</h1>{%- endif -%}
+
+     On every other template there is no .header__heading element at all — the
+     bare <a class="header__heading-link"> is the flex child. Targeting only
+     .header__heading meant the logo kept order: 0 on inner pages and sorted
+     ahead of the hamburger, which is why the header looked right on the
+     homepage and wrong everywhere else. */
+  header.header.page-width .header__heading,
+  header.header.page-width > .header__heading-link {
     order: 2;
     flex: 1 1 auto;
     min-width: 0;
     margin: 0;
-    text-align: center;
   }
 
   header.header.page-width .header__heading-link {

@@ -305,6 +305,14 @@
     {% endstyle %}
 
     {{ 'base.css' | asset_url | stylesheet_tag }}
+    {%- comment -%}
+      Build marker. View source and search for "theme-build", or run
+      `window.THEME_BUILD` in the console, to confirm which build is live.
+      Bump this whenever the theme is re-uploaded.
+    {%- endcomment -%}
+    <meta name="theme-build" content="v12-2026-08-16">
+    <script>window.THEME_BUILD = 'v12-2026-08-16';</script>
+
     {{ 'custom-fixes.css' | asset_url | stylesheet_tag }}
     <link rel="stylesheet" href="{{ 'component-cart-items.css' | asset_url }}" media="print" onload="this.media='all'">
 

@@ -169,24 +169,20 @@
           endfor
         endif
 
-        assign has_size_option = false
+        comment
+          Only the colour option is scanned for now. The size scan and the
+          single_option flag went with the inline size row further down; the
+          ADD TO BAG bar computes its own use_size_popup and re-assigns
+          size_option where it needs them.
+        endcomment
         assign has_colour_option = false
         for card_option in card_product.options_with_values
           assign option_name_lc = card_option.name | downcase
-          if option_name_lc contains 'size'
-            assign size_option = card_option
-            assign has_size_option = true
-          endif
           if option_name_lc contains 'color' or option_name_lc contains 'colour'
             assign colour_option = card_option
             assign has_colour_option = true
           endif
         endfor
-
-        assign single_option = false
-        if card_product.options_with_values.size == 1
-          assign single_option = true
-        endif
       -%}
       <div class="card__content">
         <div class="card__information">
@@ -254,32 +250,19 @@
 
             {% render 'price', product: card_product, price_class: '', show_compare_at_price: true %}
 
-            {%- if has_size_option -%}
-              {%- if single_option -%}
-                <div class="card__sizes card__sizes--interactive" role="group">
-                  {%- for size_variant in card_product.variants -%}
-                    <button
-                      type="button"
-                      class="card__size card__size--button"
-                      data-variant-id="{{ size_variant.id }}"
-                      {% unless size_variant.available %}
-                        disabled aria-disabled="true"
-                      {% endunless %}
-                      aria-label="{{ size_variant.title | escape }}"
-                    >
-                      {{- size_variant.option1 -}}
-                    </button>
-                  {%- endfor -%}
-                </div>
-                <p class="card__sizes-status" role="status" aria-live="polite"></p>
-              {%- else -%}
-                <div class="card__sizes">
-                  {%- for size_value in size_option.values -%}
-                    <span class="card__size">{{ size_value }}</span>
-                  {%- endfor -%}
-                </div>
-              {%- endif -%}
-            {%- endif -%}
+            {%- comment -%}
+              The inline size row (.card__sizes) used to sit here — a chip per
+              size, tappable to add straight to cart on single-option products.
+              Removed on request: it repeated what the ADD TO BAG bar's size
+              popup already offers and made the cards tall and noisy.
+
+              Sizes are still reachable from the card: the ADD TO BAG bar below
+              opens the .card-sizes popup, which is a separate mechanism and is
+              untouched. Restore this block from git history if the chips are
+              ever wanted back — .card__sizes styles are still in
+              custom-fixes.css, and setupInlineSizes() in custom-fixes.js still
+              wires them up.
+            {%- endcomment -%}
 
             {%- if has_colour_option -%}
               <div class="card__swatches" aria-label="{{ colour_option.name | escape }}">

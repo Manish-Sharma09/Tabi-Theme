@@ -197,7 +197,7 @@ transform: scale(1.03);
 
 /* ============================================
    MOBILE CART — Advanced Integration
-   All changes scoped to max-width: 580px
+   Scoped to the whole mobile range (max-width: 989px)
    Desktop behaviour untouched
    ============================================ */
 
@@ -206,7 +206,7 @@ transform: scale(1.03);
   display: none;
 }
 
-@media (max-width: 580px) {
+@media (max-width: 989px) {
   .mobile-cart-icon {
     display: flex;
     align-items: center;
@@ -1373,16 +1373,15 @@ transform: scale(1.03);
   .header_link {
     display: none;
 }
-  @media (max-width: 580px){
+  @media (max-width: 989px){
   .search_desktop_icon{
-    display:none;
+    display: none;
   }
   .header_link {
     display: block;
-}
+  }
   header-drawer {
     display: flex;
-    flex-direction: row-reverse;
     align-items: center;
   }
     
@@ -1462,34 +1461,52 @@ a.cstm-header-con {
 ======================================== */
 
 /* Desktop → hide mobile cart */
-@media (min-width: 581px) {
+@media (min-width: 990px) {
   .mobile-cart-icon {
     display: none !important;
   }
 }
 
 /* Mobile → hide desktop cart */
-@media (max-width: 580px) {
+@media (max-width: 989px) {
   #cart-icon-bubble {
     display: none !important;
   }
 }
 
-/* ========================================
-   MOBILE HEADER LAYOUT  [menu] [logo] [search][cart]
+/* ============================================================================
+   MOBILE HEADER — SINGLE SOURCE OF TRUTH
 
-   Declared last on purpose: an earlier @media (max-width: 989px) block sets
-   `.ctsm-section-added { display: flex }` and puts `justify-content:
-   space-between` on a 7-class `.header` selector, so anything declared above
-   it loses on source order / specificity.
+   Target, at every width below 990px:
 
-   `.header` must stay the positioning context for the search modal
-   (`.modal__content` is position:absolute; inset:0), so nothing inside
-   `.ctsm-section-added` may be positioned or transformed. `display: contents`
-   promotes the hamburger / search / cart to direct flex children of `.header`,
+        [ ☰ ]            [ logo ]            [ 🔍 ] [ 🛒 ]
+
+   Why the header kept rearranging itself before: the same look was being built
+   from TWO different sets of elements depending on width —
+
+     <= 580px   search = .header_link          cart = .mobile-cart-icon
+     581-989px  search = .search_desktop_icon  cart = #cart-icon-bubble
+                (both nested inside .header__icons)
+
+   Different elements, different parents, different order rules and competing
+   !important visibility flags. Crossing 580px swapped the entire mechanism.
+
+   Now there is ONE regime for the whole mobile range. The mobile trio renders;
+   .header__icons is switched off completely (its account link and currency
+   selector already live in the menu drawer footer, so nothing is lost).
+   Desktop (>= 990px) is left as stock Dawn.
+
+   Declared last in this stylesheet on purpose: an earlier @media block puts
+   `justify-content: space-between` on a 7-class .header selector, so anything
+   above it loses on source order.
+
+   `.header` must remain the positioning context for the search modal
+   (.modal__content is position:absolute; inset:0), so nothing inside
+   .ctsm-section-added may be positioned or transformed. `display: contents`
+   promotes the hamburger / search / cart to direct flex children of .header,
    which is what allows ordering them without a wrapper.
-======================================== */
-@media (max-width: 989px) {
+============================================================================ */
+@media screen and (max-width: 989px) {
   header.header.page-width,
   header.header.header--middle-left.header--mobile-center.page-width.header--has-menu.header--has-social.header--has-account {
     display: flex;
@@ -1503,14 +1520,15 @@ a.cstm-header-con {
     display: contents;
   }
 
-  /* LEFT */
+  /* 1 — hamburger, hard left */
   header.header.page-width header-drawer {
     order: 1;
     flex: 0 0 auto;
     margin: 0;
+    justify-self: start;
   }
 
-  /* CENTRE — takes the slack, which is what pushes the icons right */
+  /* 2 — logo takes the slack, which is what pushes the icons right */
   header.header.page-width .header__heading {
     order: 2;
     flex: 1 1 auto;
@@ -1519,20 +1537,26 @@ a.cstm-header-con {
     text-align: center;
   }
 
-  /* RIGHT */
+  header.header.page-width .header__heading-link {
+    display: inline-block;
+    padding: 0;
+  }
+
+  /* 3 — search */
   header.header.page-width .header_link {
     order: 3;
     flex: 0 0 auto;
+    display: block;
     margin: 0;
   }
 
+  /* 4 — cart, hard right */
   header.header.page-width .mobile-cart-icon {
     order: 4;
     flex: 0 0 auto;
     /* MUST stay `relative`, never `static`: .cart-count-bubble is
-       position:absolute and needs this element as its containing block.
-       With `static` the badge escaped up to `.header` and rendered in the
-       top-left corner, on top of the menu drawer. */
+       position:absolute and needs this element as its containing block. With
+       `static` the badge escapes to .header and lands in the top-left corner. */
     position: relative;
     transform: none;
     margin: 0;
@@ -1545,27 +1569,10 @@ a.cstm-header-con {
     bottom: auto;
   }
 
+  /* The desktop icon group is off entirely on mobile — this is what stops the
+     two regimes fighting. Account and currency are in the drawer footer. */
   header.header.page-width .header__icons {
-    order: 5;
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
-    justify-self: end;
-    margin-left: 0;
-  }
-
-  /* Search before cart, both hard right. */
-  header.header.page-width .header__icons .search_desktop_icon {
-    order: 1;
-  }
-
-  header.header.page-width .header__icons #cart-icon-bubble {
-    order: 2;
-  }
-
-  header.header.page-width .header__icons .header__icon--account,
-  header.header.page-width .header__icons localization-form {
-    order: 0;
+    display: none !important;
   }
 
   /* The search modal spans the header, not just the icon that opens it. */

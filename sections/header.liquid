@@ -1544,15 +1544,50 @@ a.cstm-header-con {
      homepage and wrong everywhere else. */
   header.header.page-width .header__heading,
   header.header.page-width > .header__heading-link {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
     order: 2;
-    flex: 1 1 auto;
-    min-width: 0;
     margin: 0;
+    /* logo_width is 90px; this leaves clearance for the hamburger on the left
+       and the search + cart pair on the right even at 320px. */
+    max-width: calc(100% - 18rem);
+    z-index: 1;
+    /* !important beats the pre-existing
+       `.header--mobile-left .header__heading { text-align: left !important }`
+       — mobile_logo_position is set to "left" in the theme editor. */
+    text-align: center !important;
+    justify-self: center !important;
   }
 
   header.header.page-width .header__heading-link {
     display: inline-block;
     padding: 0;
+  }
+
+  /* Dawn sets the wrapper to width: 100%, which stops the image centring
+     inside it. */
+  header.header.page-width .header__heading-logo-wrapper {
+    width: auto;
+    max-width: 100%;
+    text-align: center;
+  }
+
+  header.header.page-width .header__heading-logo {
+    display: block;
+    margin: 0 auto;
+  }
+
+  /* The logo is out of flow now, so the icon pair needs pushing to the right
+     edge itself. */
+  header.header.page-width .header_link {
+    margin-left: auto;
+  }
+
+  /* Keep room for the logo even though it no longer contributes height. */
+  header.header.page-width {
+    min-height: 5.6rem;
   }
 
   /* 3 — search */

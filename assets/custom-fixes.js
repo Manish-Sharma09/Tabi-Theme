@@ -187,9 +187,10 @@
       return function (event) {
         event.preventDefault();
         event.stopPropagation();
-        if (!card.__slider) return;
-        pause(card.__slider, false);
-        goTo(card.__slider, card.__slider.index + delta);
+        var s = card.__slider || buildSlider(card);
+        if (!s) return;
+        pause(s, false);
+        goTo(s, s.index + delta);
       };
     }
 
@@ -209,8 +210,13 @@
       });
     });
 
-    /* Belt and braces: intercept in the CAPTURE phase on the grid item, before
-       the card link can act on it. */
+    /* Capture-phase backstop: cancel the link's default action before it can
+       act, while the event is still travelling DOWN to the button.
+
+       preventDefault() ONLY — never stopPropagation() here. Capture runs
+       root -> target, so stopping propagation on this ancestor prevents the
+       event from ever reaching the button, and the arrow silently does
+       nothing. That is exactly what broke v14. */
     if (host && !host.__navCaptureBound) {
       host.__navCaptureBound = true;
       host.addEventListener(
@@ -221,7 +227,6 @@
             : null;
           if (!btn) return;
           event.preventDefault();
-          event.stopPropagation();
         },
         true
       );

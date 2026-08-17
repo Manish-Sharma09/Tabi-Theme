@@ -1066,3 +1066,25 @@ table {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* --------------------------------------------------------------------------
+   FLUID IMAGES THAT CARRY width/height ATTRIBUTES
+
+   An <img> with width/height attributes gets them as CSS *presentational
+   hints* — including `height`, which becomes a pixel height. That hint loses
+   to any author CSS, but these custom sections only ever declare
+   `width: 100%` and never touch height, so nothing overrode it: the images
+   rendered 100% wide by their full natural pixel height, stretched tall.
+
+   This theme has no global `img { height: auto }` to fall back on, so the
+   images that carry the attributes opt in explicitly. The attributes still do
+   their real job — the browser derives an aspect ratio from them and reserves
+   the right box before the image loads, which is what stops layout shift.
+
+   A single class rather than a bare `img` selector keeps the blast radius at
+   exactly the images changed, and cannot out-specify rules like
+   `.card-slider__img { height: 100% }`.
+   -------------------------------------------------------------------------- */
+.cf-img-fluid {
+  height: auto;
+}

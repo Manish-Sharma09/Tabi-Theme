@@ -4,7 +4,7 @@
       <img 
         src="{{ section.settings.background_image | image_url: width: section.settings.background_image.width }}"
         alt="Newsletter Background Desktop"
-        class="newsletter-bg-img newsletter-bg-desktop"
+        class="newsletter-bg-img newsletter-bg-desktop cf-img-fluid"
         width="{{ section.settings.background_image.width }}"
         height="{{ section.settings.background_image.height }}"
         loading="lazy"
@@ -14,7 +14,7 @@
       <img 
         src="{{ section.settings.mobile_background_image | image_url: width: section.settings.mobile_background_image.width }}"
         alt="Newsletter Background Mobile"
-        class="newsletter-bg-img newsletter-bg-mobile"
+        class="newsletter-bg-img newsletter-bg-mobile cf-img-fluid"
         width="{{ section.settings.mobile_background_image.width }}"
         height="{{ section.settings.mobile_background_image.height }}"
         loading="lazy"

@@ -3,6 +3,7 @@
     <div class="slide">
       {% if block.settings.icon %}
         <img
+          class="cf-img-fluid"
           src="{{ block.settings.icon | image_url: width: block.settings.icon.width }}"
           alt="{{ block.settings.icon.alt | default: block.settings.title | escape }}"
           width="{{ block.settings.icon.width }}"

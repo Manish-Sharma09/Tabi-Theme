@@ -448,6 +448,7 @@
     var decided = false;
     var dragging = false;
     var suppressClick = false;
+    var pointerId = null;
 
     card.addEventListener('pointerdown', function (event) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -457,6 +458,7 @@
       decided = false;
       dragging = false;
       dx = 0;
+      pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       width = card.offsetWidth || 1;
@@ -483,6 +485,19 @@
             return;
           }
           state.dragging = true;
+
+          /* Capture now that we own the gesture, so a finger that slides off
+             the card (easy on a 2-up grid) keeps delivering move and up events
+             here instead of silently stranding the drag. Captured only once
+             the axis is settled — capturing on pointerdown would interfere
+             with the browser's own vertical scrolling. */
+          if (pointerId !== null && card.setPointerCapture) {
+            try {
+              card.setPointerCapture(pointerId);
+            } catch (e) {
+              /* Safari throws if the pointer is already gone; harmless. */
+            }
+          }
         }
 
         // Track follows the finger 1:1 while the drag is live.
@@ -517,12 +532,23 @@
         }, 80);
       }
 
+      if (pointerId !== null && card.releasePointerCapture) {
+        try {
+          card.releasePointerCapture(pointerId);
+        } catch (e) {
+          /* Already released. */
+        }
+      }
+      pointerId = null;
       dx = 0;
       dragging = false;
       scheduleResume(state);
     }
 
-    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (evt) {
+    /* NOT pointerleave: on a 2-up grid the finger crosses the card edge
+       constantly mid-swipe, and ending the drag there truncated it. Pointer
+       capture above keeps up/cancel coming to us wherever the finger ends. */
+    ['pointerup', 'pointercancel'].forEach(function (evt) {
       card.addEventListener(evt, release);
     });
 
@@ -555,9 +581,19 @@
     );
 
     if (!inCarousel) {
-      // Keep vertical scrolling native; we take the horizontal axis.
-      var media = card.querySelector('.card__media');
-      if (media) media.style.touchAction = 'pan-y';
+      /* touch-action goes on the CARD, not on .card__media.
+
+         A browser resolves the effective touch-action for a gesture by walking
+         up from the element actually under the finger. On these cards that
+         element is Dawn's stretched link overlay (.card__heading a::after),
+         which lives in .card__content — it is NOT inside .card__media. So
+         setting pan-y on .card__media never applied to the touch that matters:
+         the gesture kept its default of `auto`, the browser claimed it as a
+         scroll and fired pointercancel, and the swipe died before it started.
+
+         On the card it covers every descendant. Vertical scrolling stays
+         native; the horizontal axis becomes ours. */
+      card.style.touchAction = 'pan-y';
       bindDrag(card);
     }
 

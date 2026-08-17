@@ -78,6 +78,7 @@
     {% for block in section.blocks %}
       <a href="{{ block.settings.url }}">
         <img
+          class="cf-img-fluid"
           src="{{ block.settings.image | image_url: width: block.settings.image.width }}"
           alt="{{ block.settings.image.alt | default: block.settings.text | escape }}"
           width="{{ block.settings.image.width }}"

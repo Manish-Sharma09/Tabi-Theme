@@ -15,6 +15,7 @@
           <div class="front">
             <div id="f{{ forloop.index }}" class="front-content">
               <img
+                class="cf-img-fluid"
                 src="{{ block.settings.front_image | image_url: width: block.settings.front_image.width }}"
                 alt="{{ block.settings.front_image.alt | escape }}"
                 width="{{ block.settings.front_image.width }}"
@@ -26,6 +27,7 @@
           <div class="back">
             <div id="b{{ forloop.index }}" class="back-content">
               <img
+                class="cf-img-fluid"
                 src="{{ block.settings.back_image | image_url: width: block.settings.back_image.width }}"
                 alt="{{ block.settings.back_image.alt | escape }}"
                 width="{{ block.settings.back_image.width }}"
@@ -52,7 +54,7 @@
           <img
             src="{{ block.settings.front_image | image_url: width: block.settings.front_image.width }}"
             alt="{{ block.settings.front_image.alt | escape }}"
-            class="grid-image"
+            class="grid-image cf-img-fluid"
             width="{{ block.settings.front_image.width }}"
             height="{{ block.settings.front_image.height }}"
             loading="lazy"
@@ -60,7 +62,7 @@
           <img
             src="{{ block.settings.back_image | image_url: width: block.settings.back_image.width }}"
             alt="{{ block.settings.back_image.alt | escape }}"
-            class="grid-image"
+            class="grid-image cf-img-fluid"
             width="{{ block.settings.back_image.width }}"
             height="{{ block.settings.back_image.height }}"
             loading="lazy"

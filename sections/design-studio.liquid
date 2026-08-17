@@ -14,6 +14,7 @@
     {% endif %}">
     {% if section.settings.image-bg  %}
     <img
+      class="cf-img-fluid"
       src="{{ section.settings['image-bg'] | image_url: width: section.settings['image-bg'].width }}"
       alt="{{ section.settings['image-bg'].alt | escape }}"
       width="{{ section.settings['image-bg'].width }}"
@@ -50,6 +51,7 @@
         {% elsif block.settings.img-ex != blank %}
   
   <img
+    class="cf-img-fluid"
     src="{{ block.settings['img-ex'] | image_url: width: block.settings['img-ex'].width }}"
     alt="{{ block.settings['img-ex'].alt | escape }}"
     width="{{ block.settings['img-ex'].width }}"
@@ -69,6 +71,7 @@
     
        {% if section.settings.image-bg  %}
     <img
+      class="cf-img-fluid"
       src="{{ section.settings['image-bg'] | image_url: width: section.settings['image-bg'].width }}"
       alt="{{ section.settings['image-bg'].alt | escape }}"
       width="{{ section.settings['image-bg'].width }}"
@@ -96,6 +99,7 @@
         {% elsif block.settings.img-ex != blank %}
   
   <img
+    class="cf-img-fluid"
     src="{{ block.settings['img-ex'] | image_url: width: block.settings['img-ex'].width }}"
     alt="{{ block.settings['img-ex'].alt | escape }}"
     width="{{ block.settings['img-ex'].width }}"

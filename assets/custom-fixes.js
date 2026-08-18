@@ -699,16 +699,39 @@
     return 'cart-icon-bubble';
   }
 
+  /* renderContents() clears .is-empty from .drawer__inner, but never from the
+     <cart-drawer> element wrapping it — and the stylesheet keys the whole empty
+     state off THAT element:
+
+       cart-drawer.is-empty .drawer__header              { display: none }
+       cart-drawer:not(.is-empty) .cart-drawer__warnings { display: none }
+
+     The class is printed server-side from `{% if cart == empty %}`, so for a
+     shopper whose cart was empty when the page loaded it stayed on the element
+     for the life of the page. Adding from a card then wrote the new line items
+     into #CartDrawer correctly and slid the drawer open — onto the "your cart
+     is empty" panel, with the real contents styled out of sight. Reloading
+     re-rendered the tag without the class, which is why the item "appeared"
+     only after a refresh.
+
+     Dawn's own product-form.js clears this after every add for exactly this
+     reason; this path simply never did. */
+  function clearEmptyFlag(host) {
+    if (host && host.classList) host.classList.remove('is-empty');
+  }
+
   function refreshCart(json) {
     var drawer = document.querySelector('cart-drawer');
     if (drawer && typeof drawer.renderContents === 'function' && json.sections) {
       drawer.renderContents(json);
+      clearEmptyFlag(drawer);
       return true;
     }
 
     var notification = document.querySelector('cart-notification');
     if (notification && typeof notification.renderContents === 'function' && json.sections) {
       notification.renderContents(json);
+      clearEmptyFlag(notification);
       return true;
     }
 
@@ -729,6 +752,16 @@
     if (!variantId) return Promise.resolve();
     button.classList.add('is-loading');
     setStatus(popup, '');
+
+    /* Tell the drawer where focus came from before it takes over, the way
+       product-form.js does. Closing the drawer hands focus back here; the size
+       chip itself is gone by then, so aim at the card's ADD TO BAG button. */
+    var drawerEl = document.querySelector('cart-drawer');
+    if (drawerEl && typeof drawerEl.setActiveElement === 'function') {
+      var card = popup && popup.closest ? popup.closest('.card-wrapper') : null;
+      var toggle = card ? card.querySelector('.card-sizes__toggle') : null;
+      drawerEl.setActiveElement(toggle || document.activeElement);
+    }
 
     var body = {
       items: [{ id: Number(variantId), quantity: 1 }],

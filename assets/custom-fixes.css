@@ -572,20 +572,33 @@ script.card-gallery-data {
    viewport while it is open and let it own its own scrolling.
    -------------------------------------------------------------------------- */
 
-/* --drawer-top is measured and written by custom-fixes.js on every open and
-   resize. Dawn's own --header-bottom-position can be 0 (transparent/absolute
-   headers, or a measurement taken before layout settles), and a 0 there meant
-   the drawer covered the header — including the X that closes it. */
+/* The drawer fills the viewport from the very top.
+
+   It used to open BELOW the header, offset by a --drawer-top value measured in
+   JS, which left a strip of page above it and gave the panel its own short
+   scroll area inside a page that also scrolled. Worse, the header stayed on top
+   so its close X was visible at the same time as the drawer's own — three ways
+   to shut one panel.
+
+   Starting at 0 and covering the header solves all of it at once: no gap, one
+   scroll region, and the header's X is simply not on screen, so the only close
+   control is the single cross injected into the drawer by custom-fixes.js. */
 .section-header.menu-open .menu-drawer,
 .header-wrapper .menu-open .menu-drawer {
   position: fixed;
-  top: var(--drawer-top, var(--header-bottom-position, 5.6rem));
+  top: 0;
   left: 0;
+  /* Must out-rank .header, which paints at the section's default level. Dawn
+     ships .menu-drawer at z-index 3; that lost to the header rule that used to
+     sit here to keep the header's own X clickable. */
+  z-index: 10;
   /* Width deliberately NOT set. menu_type_desktop is "drawer" on this store,
      and Dawn sizes the panel to 40rem from 750px up (100% below that).
      Forcing width: 100% here blew the desktop drawer across the whole screen. */
-  height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
-  max-height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
+  height: var(--viewport-height, 100vh);
+  max-height: var(--viewport-height, 100vh);
+  /* Long menus still have to move. Short ones now have nothing left to scroll,
+     because the panel already owns the whole screen. */
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -593,48 +606,37 @@ script.card-gallery-data {
 .section-header.menu-open menu-drawer > details[open] > summary::before,
 .section-header.menu-open header-drawer > details[open] > summary::before {
   position: fixed;
-  top: var(--drawer-top, var(--header-bottom-position, 5.6rem));
+  top: 0;
   left: 0;
   width: 100%;
-  height: calc(var(--viewport-height, 100vh) - var(--drawer-top, var(--header-bottom-position, 5.6rem)));
+  height: var(--viewport-height, 100vh);
 }
 
-/* Keep the header visible for as long as the drawer is open. */
+/* Pinned so closing the drawer does not jump the page back to where it was.
+   The header sits UNDER the drawer now — see the z-index above. */
 .section-header.menu-open {
   position: sticky;
   top: 0;
 }
 
-/* The header row must paint ABOVE the drawer (.menu-drawer is z-index 3), or
-   the drawer's own background hides the close control sitting in the header. */
-.section-header.menu-open .header,
-.section-header.menu-open .header-wrapper {
-  position: relative;
-  z-index: 6;
-}
-
-.section-header.menu-open .header {
-  background: rgb(var(--color-background));
-}
-
-/* --- Guaranteed close control, injected into the drawer by custom-fixes.js -- */
+/* --- The drawer's ONE close control, injected by custom-fixes.js ----------
+   Icon only. It used to carry the word "Close" beside the cross, which read as
+   two separate controls sitting under the header's own X — three ways to shut
+   one panel. The label now lives on aria-label, so screen readers still get it.
+   Stays sticky so the cross is reachable however far the menu is scrolled. */
 .menu-drawer__dismiss {
   position: sticky;
   top: 0;
   z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  justify-content: flex-end;
   width: 100%;
-  padding: 1.2rem 2rem;
+  padding: 1.4rem 1.8rem;
   border: 0;
   border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.08);
   background: rgb(var(--color-background));
   color: rgb(var(--color-foreground));
-  font-size: 1.2rem;
-  letter-spacing: 0.12rem;
-  text-transform: uppercase;
   cursor: pointer;
 }
 
@@ -644,8 +646,8 @@ script.card-gallery-data {
 
 .menu-drawer__dismiss .svg-wrapper,
 .menu-drawer__dismiss svg {
-  width: 1.4rem;
-  height: 1.4rem;
+  width: 1.7rem;
+  height: 1.7rem;
   flex: 0 0 auto;
 }
 

@@ -41,6 +41,19 @@
      test that keeps vertical page scrolling working. */
   var DRAG_SLOP = 6;
 
+  /* Controls inside a card that own their own taps, and must never start a
+     slider drag.
+
+     This is what broke "add to bag -> pick a size". A tap carries a few pixels
+     of drift; once that crossed DRAG_SLOP the card took pointer capture, the
+     chip stopped receiving pointerup, and release() flagged the follow-up click
+     as a swipe and cancelled it. Nothing was ever posted to /cart/add.js, so
+     the cart opened empty. It failed intermittently — a perfectly still finger
+     still worked — which is exactly what a drift threshold does.
+
+     The card image is not in this list, so swiping the gallery is unaffected. */
+  var NO_DRAG_SELECTOR = 'button, .card-sizes, .quick-add, modal-opener, quick-add-modal';
+
   var CARD_SELECTOR = '.card-wrapper[data-card-slider]';
   var reduceMotion =
     window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -478,6 +491,15 @@
 
     card.addEventListener('pointerdown', function (event) {
       if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+      // Presses that land on a control belong to that control, not to the
+      // gallery. Bail before arming anything so no click gets cancelled later.
+      var target = event.target;
+      if (target && target.closest && target.closest(NO_DRAG_SELECTOR)) {
+        active = false;
+        return;
+      }
+
       var state = card.__slider || buildSlider(card);
       if (!state || state.count < 2) return;
       active = true;
@@ -863,24 +885,11 @@
     return document.querySelector('.section-header');
   }
 
-  /* Dawn writes --header-bottom-position from getBoundingClientRect().bottom,
-     which can come back 0 on a transparent/absolute header or before layout
-     settles. A 0 there put the drawer over the header and hid the X. Measure
-     it ourselves and publish --drawer-top. */
-  function syncDrawerTop() {
-    var header = headerSection();
-    if (!header) return;
-
-    var rect = header.getBoundingClientRect();
-    var top = Math.round(rect.bottom);
-
-    if (!top || top < 1) {
-      var inner = header.querySelector('.header');
-      top = inner ? Math.round(inner.getBoundingClientRect().height) : 0;
-    }
-    if (!top || top < 1) top = 56;
-
-    document.documentElement.style.setProperty('--drawer-top', top + 'px');
+  /* The drawer is full-viewport now, so there is no header offset left to
+     measure — only the height itself. 100vh alone is not enough on mobile,
+     where it counts the space behind the browser's collapsing address bar and
+     pushes the bottom of the menu off screen; innerHeight is the real figure. */
+  function syncViewportHeight() {
     document.documentElement.style.setProperty('--viewport-height', window.innerHeight + 'px');
   }
 
@@ -909,7 +918,9 @@
     btn.type = 'button';
     btn.className = 'menu-drawer__dismiss';
     btn.setAttribute('aria-label', 'Close menu');
-    btn.innerHTML = '<span>Close</span><span class="svg-wrapper">' + CLOSE_ICON + '</span>';
+    // Icon only — the accessible name comes from aria-label above. A visible
+    // "Close" word beside the cross read as a second, separate control.
+    btn.innerHTML = '<span class="svg-wrapper">' + CLOSE_ICON + '</span>';
 
     btn.addEventListener('click', function (event) {
       event.preventDefault();
@@ -924,21 +935,21 @@
     var header = headerSection();
     if (!header) return;
 
-    syncDrawerTop();
+    syncViewportHeight();
     injectDrawerDismiss();
 
     // Re-measure the moment the drawer opens, after Dawn has done its own pass.
     new MutationObserver(function () {
       if (header.classList.contains('menu-open')) {
-        syncDrawerTop();
-        window.requestAnimationFrame(syncDrawerTop);
+        syncViewportHeight();
+        window.requestAnimationFrame(syncViewportHeight);
         injectDrawerDismiss();
       }
     }).observe(header, { attributes: true, attributeFilter: ['class'] });
 
-    window.addEventListener('resize', syncDrawerTop);
+    window.addEventListener('resize', syncViewportHeight);
     window.addEventListener('orientationchange', function () {
-      window.setTimeout(syncDrawerTop, 150);
+      window.setTimeout(syncViewportHeight, 150);
     });
   }
 

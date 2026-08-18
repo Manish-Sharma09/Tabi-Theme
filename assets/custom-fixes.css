@@ -619,6 +619,29 @@ script.card-gallery-data {
   top: 0;
 }
 
+/* Belt and braces for the "clicking anywhere re-opens the menu" bug.
+
+   base.css turns the hamburger into a full-page invisible layer whenever it
+   carries aria-expanded="true":
+
+     .header__icon--menu[aria-expanded='true']::before {
+       content: ''; width: 100%; height: calc(100vh - ...); position: absolute;
+     }
+
+   That layer is Dawn's click-outside-to-close scrim, and because it is a
+   ::before of the <summary>, clicking it toggles the <details> open. global.js
+   only clears aria-expanded on KeyboardEvent, so closing by mouse or touch used
+   to leave the layer sitting over the whole page.
+
+   custom-fixes.js now keeps the attribute honest, and this rule makes it
+   impossible for the layer to exist while the drawer is shut even if the
+   attribute ever goes stale again. .menu-open is present only while the drawer
+   is genuinely open, so the scrim still works for click-outside on desktop,
+   where the panel is 40rem rather than full width. */
+.section-header:not(.menu-open) .header__icon--menu::before {
+  display: none;
+}
+
 /* --- The drawer's ONE close control, injected by custom-fixes.js ----------
    Icon only. It used to carry the word "Close" beside the cross, which read as
    two separate controls sitting under the header's own X — three ways to shut

@@ -926,18 +926,56 @@
     document.documentElement.style.setProperty('--viewport-height', window.innerHeight + 'px');
   }
 
+  /* The hamburger <summary> that owns the drawer's expanded state. */
+  function mainSummary() {
+    var drawer = document.querySelector('header-drawer');
+    if (!drawer) return null;
+    var details =
+      drawer.querySelector('#Details-menu-drawer-container') || drawer.querySelector('details');
+    return details ? details.querySelector('summary') : null;
+  }
+
+  /* THE "CLICKING ANYWHERE RE-OPENS THE MENU" BUG.
+
+     base.css builds a full-page invisible layer out of the hamburger itself:
+
+       .header__icon--menu[aria-expanded='true']::before {
+         content: ''; width: 100%; height: calc(100vh - ...);
+         position: absolute;
+         background: ...   <- commented out in this theme, so it is INVISIBLE
+       }
+
+     It is Dawn's click-outside-to-close scrim. Because it is a ::before of the
+     <summary>, a click on it counts as a click on the summary — which toggles
+     the <details> and opens the drawer.
+
+     And global.js only ever clears the attribute for key presses:
+
+       if (event instanceof KeyboardEvent) elementToFocus?.setAttribute('aria-expanded', false);
+
+     So closing by mouse or touch left aria-expanded="true" behind. The drawer
+     slid away, the invisible layer did not, and the next click anywhere on the
+     page re-opened the menu. Escape never showed the bug, which is why it read
+     as random.
+
+     Keeping the attribute honest fixes the overlay and the screen-reader state
+     at the same time — it was announcing an expanded menu that was shut. */
+  function syncSummaryExpanded(open) {
+    var summary = mainSummary();
+    if (summary) summary.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
   function closeDrawer(event) {
     var drawer = document.querySelector('header-drawer');
     if (!drawer) return;
 
-    var details = drawer.querySelector('#Details-menu-drawer-container') ||
-      drawer.querySelector('details');
-    var summary = details ? details.querySelector('summary') : null;
+    var summary = mainSummary();
 
     // Full teardown: removes .menu-opening, .menu-open and the body scroll
     // lock. Calling closeSubmenu() alone would leave the page frozen.
     if (typeof drawer.closeMenuDrawer === 'function' && summary) {
       drawer.closeMenuDrawer(event || new Event('click'), summary);
+      syncSummaryExpanded(false);
       return;
     }
     if (summary) summary.click();
@@ -971,13 +1009,19 @@
     syncViewportHeight();
     injectDrawerDismiss();
 
-    // Re-measure the moment the drawer opens, after Dawn has done its own pass.
+    /* .menu-open is added and removed by Dawn's own openMenuDrawer /
+       closeMenuDrawer, so it is the one signal every close path shares —
+       my X button, the desktop click-outside scrim, Escape, all of them.
+       Re-syncing aria-expanded here therefore covers routes I do not own,
+       including any added later. */
     new MutationObserver(function () {
-      if (header.classList.contains('menu-open')) {
+      var open = header.classList.contains('menu-open');
+      if (open) {
         syncViewportHeight();
         window.requestAnimationFrame(syncViewportHeight);
         injectDrawerDismiss();
       }
+      syncSummaryExpanded(open);
     }).observe(header, { attributes: true, attributeFilter: ['class'] });
 
     window.addEventListener('resize', syncViewportHeight);

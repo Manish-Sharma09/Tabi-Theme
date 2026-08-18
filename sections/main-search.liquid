@@ -246,14 +246,28 @@
               </div>
             </div>
           {%- else -%}
+            {%- comment -%}
+              id="product-grid" and its data-id belong on the <ul>, not on this
+              wrapper — matching main-collection-product-grid.liquid.
+
+              snippets/view-grid.liquid (the 2/3/4-column switcher) applies
+              `grid-cols-N` to document.getElementById('product-grid'), and that
+              class sets `display: grid; grid-template-columns: repeat(N, 1fr)`.
+              With the id on the wrapper, the wrapper became the grid and its two
+              children — the loading overlay and the <ul> — became its cells, so
+              the whole product list was crushed into one column's worth of width
+              and dragged off the left edge by the <ul>'s own negative gutter
+              margin. facets.js also reads .dataset.id off this same element, so
+              the two attributes have to travel together.
+            {%- endcomment -%}
             <div
               class="template-search__results collection{% if section.settings.filter_type != 'vertical' %} page-width{% endif %}"
-              id="product-grid"
-              data-id="{{ section.id }}"
             >
               <div class="loading-overlay gradient"></div>
               <ul
-                class="grid product-grid  grid--{{ section.settings.columns_mobile }}-col-tablet-down grid--{{ section.settings.columns_desktop }}-col-desktop"
+                id="product-grid"
+                data-id="{{ section.id }}"
+                class="grid product-grid grid--{{ section.settings.columns_mobile }}-col-tablet-down grid--{{ section.settings.columns_desktop }}-col-desktop"
                 role="list"
               >
                 {%- assign skip_card_product_styles = false -%}

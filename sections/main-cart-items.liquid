@@ -1,5 +1,9 @@
 {{ 'component-cart.css' | asset_url | stylesheet_tag }}
 {{ 'component-cart-items.css' | asset_url | stylesheet_tag }}
+{%- if section.settings.enable_gift_wrap -%}
+  {{ 'gift-wrap.css' | asset_url | stylesheet_tag }}
+  <script src="{{ 'gift-wrap.js' | asset_url }}" defer="defer"></script>
+{%- endif -%}
 {{ 'component-totals.css' | asset_url | stylesheet_tag }}
 {{ 'component-price.css' | asset_url | stylesheet_tag }}
 {{ 'component-discounts.css' | asset_url | stylesheet_tag }}
@@ -430,6 +434,14 @@
                       </div>
                     </td>
                   </tr>
+                  {%- comment -%}
+                    Its own <tr> spanning all five columns rather than something
+                    tucked inside the details cell, so it can never collide with
+                    the quantity or price cells at any width.
+                  {%- endcomment -%}
+                  {%- if section.settings.enable_gift_wrap -%}
+                    {%- render 'gift-wrap-item', item: item, colspan: 5 -%}
+                  {%- endif -%}
                 {%- endfor -%}
               </tbody>
             </table>
@@ -448,18 +460,71 @@
         {{ 'accessibility.loading' | t }}
       </p>
     </form>
+
+    {%- comment -%}
+      Deliberately outside .js-contents. cart.js replaces that block's innerHTML
+      after every cart update, which would tear the open dialog out of the page
+      mid-interaction. One modal serves every row; gift-wrap.js points it at
+      whichever line was clicked.
+    {%- endcomment -%}
+    {%- if section.settings.enable_gift_wrap and cart != empty -%}
+      {%- render 'gift-wrap-modal',
+        wrap_blocks: section.blocks,
+        details: section.settings.gift_wrap_details
+      -%}
+    {%- endif -%}
   </div>
 </cart-items>
 
 {% schema %}
 {
   "name": "t:sections.main-cart-items.name",
+  "max_blocks": 20,
+  "blocks": [
+    {
+      "type": "gift_wrap_option",
+      "name": "Gift wrap option",
+      "settings": [
+        {
+          "type": "text",
+          "id": "name",
+          "label": "Name",
+          "info": "Shown under the image and saved onto the order, so make it something the packing team will recognise.",
+          "default": "Wrapping paper"
+        },
+        {
+          "type": "image_picker",
+          "id": "image",
+          "label": "Image",
+          "info": "A photo of the paper and ribbon. Landscape crops best."
+        }
+      ]
+    }
+  ],
   "settings": [
     {
       "type": "color_scheme",
       "id": "color_scheme",
       "label": "t:sections.all.colors.label",
       "default": "scheme-1"
+    },
+    {
+      "type": "header",
+      "content": "Gift wrap"
+    },
+    {
+      "type": "checkbox",
+      "id": "enable_gift_wrap",
+      "label": "Enable gift wrapping",
+      "info": "Adds a \"Gift wrap this item\" option to each line in the cart. Add one block per wrapping paper below.",
+      "default": true
+    },
+    {
+      "type": "richtext",
+      "id": "gift_wrap_details",
+      "label": "Gift wrap details",
+      "info": "Shown in the gift wrap popup. Leave empty to use the default wording.",
+      "default": "<ol><li>Gift packaging/invoice will not include any pricing, discount or payment information.</li><li>In case of returns/refunds, gift wrap charges will not be refunded.</li></ol>"
     },
     {
       "type": "header",

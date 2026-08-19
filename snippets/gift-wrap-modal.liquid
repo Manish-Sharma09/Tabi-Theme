@@ -1,0 +1,180 @@
+{%- comment -%}
+  Gift wrap modal — wrap picker + optional gift message.
+
+  Rendered ONCE per cart page, outside .js-contents so it survives the section
+  re-render that follows every cart update.
+
+  Accepts:
+  - wrap_blocks: {Array} section.blocks — only `gift_wrap_option` blocks are used.
+      `{% render %}` has an isolated scope and cannot see `section`, so the
+      blocks have to be handed in explicitly.
+  - details: {String} richtext shown under "Gift Wrap Details" (optional)
+
+  What it does NOT do: hold any per-item state. The modal is opened against a
+  line by gift-wrap.js, which fills the fields from that row's data attributes.
+  One modal serves every row.
+{%- endcomment -%}
+
+{%- liquid
+  assign option_count = 0
+  for block in wrap_blocks
+    if block.type == 'gift_wrap_option'
+      assign option_count = option_count | plus: 1
+    endif
+  endfor
+-%}
+
+<div
+  class="gift-wrap-modal"
+  id="GiftWrapModal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="GiftWrapModalTitle"
+  hidden
+>
+  <div class="gift-wrap-modal__overlay" data-gift-wrap-dismiss></div>
+
+  <div class="gift-wrap-modal__dialog" role="document">
+    <div class="gift-wrap-modal__head">
+      <span class="gift-wrap-modal__head-icon" aria-hidden="true">
+        {%- render 'gift-wrap-icon' -%}
+      </span>
+      <h2 class="gift-wrap-modal__title" id="GiftWrapModalTitle">Gift wrap</h2>
+      <button
+        type="button"
+        class="gift-wrap-modal__close"
+        aria-label="Close gift wrap options"
+        data-gift-wrap-dismiss
+      >
+        {{- 'icon-close.svg' | inline_asset_content -}}
+      </button>
+    </div>
+
+    <div class="gift-wrap-modal__body">
+      <div class="gift-wrap-modal__picker">
+        <h3 class="gift-wrap-modal__subtitle">Select your wrapping paper and ribbon</h3>
+
+        {%- if option_count > 0 -%}
+          <fieldset class="gift-wrap-options" id="GiftWrapOptions">
+            <legend class="visually-hidden">Wrapping paper and ribbon</legend>
+
+            {%- for block in wrap_blocks -%}
+              {%- if block.type == 'gift_wrap_option' -%}
+                {%- liquid
+                  assign wrap_name = block.settings.name | default: 'Gift wrap' | strip
+                  assign input_id = 'GiftWrap-' | append: block.id
+                -%}
+                <div class="gift-wrap-option" {{ block.shopify_attributes }}>
+                  <label class="gift-wrap-option__label" for="{{ input_id }}">
+                    <input
+                      type="radio"
+                      class="gift-wrap-option__input"
+                      id="{{ input_id }}"
+                      name="gift_wrap_option"
+                      value="{{ wrap_name | escape }}"
+                      {% if block.settings.image %}
+                        data-wrap-image="{{ block.settings.image | image_url: width: 480 }}"
+                      {% endif %}
+                    >
+                    <span class="gift-wrap-option__radio" aria-hidden="true"></span>
+                    <span class="gift-wrap-option__body">
+                      <span class="gift-wrap-option__figure">
+                        {%- if block.settings.image -%}
+                          <img
+                            src="{{ block.settings.image | image_url: width: 480 }}"
+                            alt="{{ wrap_name | escape }}"
+                            width="{{ block.settings.image.width }}"
+                            height="{{ block.settings.image.height }}"
+                            loading="lazy"
+                            class="cf-img-fluid"
+                          >
+                        {%- else -%}
+                          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                        {%- endif -%}
+                      </span>
+                      <span class="gift-wrap-option__name">{{ wrap_name }}</span>
+                    </span>
+                  </label>
+                </div>
+              {%- endif -%}
+            {%- endfor -%}
+          </fieldset>
+        {%- else -%}
+          <p class="gift-wrap-empty">
+            No wrapping papers have been added yet. Add them in
+            <strong>Theme editor → Cart → Cart items → Add block → Gift wrap option</strong>,
+            giving each one an image and a name.
+          </p>
+        {%- endif -%}
+      </div>
+
+      <div class="gift-wrap-modal__side">
+        <div class="gift-wrap-message">
+          <label class="gift-wrap-message__head" for="GiftWrapMessageToggle">
+            <input
+              type="checkbox"
+              class="gift-wrap-toggle__input"
+              id="GiftWrapMessageToggle"
+              data-gift-wrap-message-toggle
+            >
+            <span class="gift-wrap-toggle__box" aria-hidden="true"></span>
+            <span>Personalise your gift with a message</span>
+          </label>
+
+          <p class="gift-wrap-message__hint" id="GiftWrapMessageHint">
+            Include the recipient's name and your message, which we'll print on a card enclosed
+            with their gift.
+          </p>
+
+          <div class="gift-wrap-message__field">
+            <label class="visually-hidden" for="GiftWrapMessage">Gift message</label>
+            <textarea
+              class="gift-wrap-message__input"
+              id="GiftWrapMessage"
+              maxlength="200"
+              rows="5"
+              placeholder="Hint: A little something from me to you."
+              aria-describedby="GiftWrapMessageHint GiftWrapMessageCount"
+              data-gift-wrap-message
+              disabled
+            ></textarea>
+            {%- comment -%}
+              Live region so the count is announced as it changes, but politely —
+              every keystroke would otherwise interrupt a screen reader.
+            {%- endcomment -%}
+            <span
+              class="gift-wrap-message__count"
+              id="GiftWrapMessageCount"
+              role="status"
+              aria-live="polite"
+              data-gift-wrap-count
+            >200 characters left</span>
+          </div>
+        </div>
+
+        <div class="gift-wrap-details">
+          <h3 class="gift-wrap-details__title">Gift wrap details</h3>
+          {%- if details != blank -%}
+            <div class="gift-wrap-details__list rte">{{ details }}</div>
+          {%- else -%}
+            <ol class="gift-wrap-details__list">
+              <li>Gift packaging/invoice will not include any pricing, discount or payment information.</li>
+              <li>In case of returns/refunds, gift wrap charges will not be refunded.</li>
+            </ol>
+          {%- endif -%}
+        </div>
+
+        <p class="gift-wrap-modal__error" role="alert" data-gift-wrap-error></p>
+
+        <button
+          type="button"
+          class="button gift-wrap-modal__save"
+          data-gift-wrap-save
+          {% if option_count == 0 %}disabled{% endif %}
+        >
+          Save &amp; continue
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -539,6 +539,33 @@
           </small>
         </div>
 
+        {%- comment -%}
+          Gift wrap entry point.
+
+          Gated on cart.item_count so it never appears over an empty cart —
+          there would be nothing to wrap, and the link would land the shopper on
+          an empty cart page.
+
+          It is a plain link to the cart page rather than a modal opened here:
+          wrapping is chosen per line, and the drawer has no room to show every
+          line's paper and message without becoming its own checkout. The full
+          cart page already lists every item, which is exactly the surface this
+          needs.
+
+          The stylesheet is loaded by the cart page section, so it is pulled in
+          here too — the drawer renders on every template, not just /cart.
+        {%- endcomment -%}
+        {%- if cart.item_count > 0 -%}
+          {{ 'gift-wrap.css' | asset_url | stylesheet_tag }}
+          <div class="gift-wrap-cta">
+            <span class="gift-wrap-cta__icon">{%- render 'gift-wrap-icon' -%}</span>
+            <p class="gift-wrap-cta__text">
+              Want to gift wrap?
+              <a class="gift-wrap-cta__link link" href="{{ routes.cart_url }}">Click here</a>
+            </p>
+          </div>
+        {%- endif -%}
+
         <!-- CTAs -->
 
         <div class="cart__ctas" {{ block.shopify_attributes }}>

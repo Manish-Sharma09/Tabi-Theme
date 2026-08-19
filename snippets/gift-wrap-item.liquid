@@ -1,0 +1,64 @@
+{%- comment -%}
+  "Gift wrap this item" row for one cart line, on the cart page.
+
+  Accepts:
+  - item:    {Object} the cart line item
+  - colspan: {Number} columns to span in the cart table (optional, default 5)
+
+  State lives entirely in the line's own properties, so it survives reloads and
+  is what the warehouse sees on the order — there is no parallel client-side
+  store to fall out of sync.
+
+    "Gift wrap"        the chosen paper, customer-visible
+    "Gift message"     the optional note, customer-visible
+    "_gift_wrap_image" preview URL; the leading underscore keeps Shopify from
+                       printing it in the cart, checkout and order confirmation
+
+  The data-* attributes below are what gift-wrap.js reads to pre-fill the modal
+  when an existing selection is edited.
+{%- endcomment -%}
+
+{%- liquid
+  assign wrap_name = item.properties['Gift wrap']
+  assign wrap_message = item.properties['Gift message']
+  assign wrap_image = item.properties['_gift_wrap_image']
+  assign is_wrapped = false
+  if wrap_name != blank
+    assign is_wrapped = true
+  endif
+  assign line = item.index | plus: 1
+  assign span = colspan | default: 5
+  assign input_id = 'GiftWrapItem-' | append: line
+-%}
+
+<tr class="gift-wrap-row" data-gift-wrap-row data-line="{{ line }}" data-quantity="{{ item.quantity }}">
+  <td colspan="{{ span }}">
+    <label class="gift-wrap-toggle" for="{{ input_id }}">
+      <input
+        type="checkbox"
+        class="gift-wrap-toggle__input"
+        id="{{ input_id }}"
+        data-gift-wrap-checkbox
+        data-line="{{ line }}"
+        data-quantity="{{ item.quantity }}"
+        data-wrap-name="{{ wrap_name | escape }}"
+        data-wrap-message="{{ wrap_message | escape }}"
+        data-wrap-image="{{ wrap_image | escape }}"
+        {% if is_wrapped %}
+          checked
+        {% endif %}
+      >
+      <span class="gift-wrap-toggle__box" aria-hidden="true"></span>
+      <span>Gift wrap this item</span>
+    </label>
+
+    {%- if is_wrapped -%}
+      <span class="gift-wrap-toggle__summary">
+        {{ wrap_name }}{% if wrap_message != blank %} · message added{% endif %}
+        <button type="button" class="gift-wrap-toggle__edit" data-gift-wrap-edit data-line="{{ line }}">
+          Change
+        </button>
+      </span>
+    {%- endif -%}
+  </td>
+</tr>

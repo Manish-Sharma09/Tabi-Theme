@@ -4,9 +4,42 @@
       "type": "main-cart-items",
       "settings": {
         "color_scheme": "scheme-1",
+        "enable_gift_wrap": true,
         "padding_top": 36,
         "padding_bottom": 36
-      }
+      },
+      "blocks": {
+        "gift-wrap-1": {
+          "type": "gift_wrap_option",
+          "settings": {
+            "name": "Classic Kraft"
+          }
+        },
+        "gift-wrap-2": {
+          "type": "gift_wrap_option",
+          "settings": {
+            "name": "Block Print Ivory"
+          }
+        },
+        "gift-wrap-3": {
+          "type": "gift_wrap_option",
+          "settings": {
+            "name": "Indigo Stripe"
+          }
+        },
+        "gift-wrap-4": {
+          "type": "gift_wrap_option",
+          "settings": {
+            "name": "Festive Gold"
+          }
+        }
+      },
+      "block_order": [
+        "gift-wrap-1",
+        "gift-wrap-2",
+        "gift-wrap-3",
+        "gift-wrap-4"
+      ]
     },
     "cart-footer": {
       "type": "main-cart-footer",

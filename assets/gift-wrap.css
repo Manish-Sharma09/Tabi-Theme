@@ -1,0 +1,565 @@
+/* ==========================================================================
+   gift-wrap.css
+
+     A. Cart drawer CTA  — "Want to gift wrap?  CLICK HERE"
+     B. Cart page row    — "Gift wrap this item" checkbox under each line
+     C. Modal            — wrap picker + optional gift message
+
+   Colours come from the theme's own scheme variables, so this follows whatever
+   colour scheme the cart section is set to rather than hard-coding a palette.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   A. CART DRAWER CTA
+   Sits above the checkout button. Rendered only when the cart has items, so
+   there is no empty-cart state to style.
+   -------------------------------------------------------------------------- */
+
+.gift-wrap-cta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.4rem 0;
+  margin: 0 0 1.2rem;
+  border-top: 0.1rem solid rgba(var(--color-foreground), 0.1);
+  border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.1);
+  font-size: 1.4rem;
+  line-height: 1.4;
+}
+
+.gift-wrap-cta__icon {
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 2.6rem;
+  color: rgb(var(--color-foreground));
+}
+
+.gift-wrap-cta__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gift-wrap-cta__text {
+  margin: 0;
+}
+
+.gift-wrap-cta__link {
+  font-weight: 600;
+  letter-spacing: 0.06rem;
+  text-transform: uppercase;
+  text-underline-offset: 0.3rem;
+}
+
+/* --------------------------------------------------------------------------
+   B. CART PAGE — PER-ITEM CHECKBOX ROW
+
+   A real <tr> spanning every column rather than something absolutely
+   positioned, so it cannot collide with the quantity or price cells at any
+   width and the table keeps one row per concept.
+   -------------------------------------------------------------------------- */
+
+.gift-wrap-row > td {
+  padding: 0 0 1.6rem;
+  border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.08);
+}
+
+.gift-wrap-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  /* Keeps the hit area comfortable on touch without stretching full width,
+     which would make the whole row look clickable when it is not. */
+  padding: 0.6rem 0;
+}
+
+/* The native box is kept in the accessibility tree but visually replaced, so
+   the tick is styled consistently across browsers. */
+.gift-wrap-toggle__input {
+  position: absolute;
+  width: 1.6rem;
+  height: 1.6rem;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.gift-wrap-toggle__box {
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 0.13rem solid rgba(var(--color-foreground), 0.55);
+  border-radius: 0.2rem;
+  background: rgb(var(--color-background));
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.gift-wrap-toggle__box::after {
+  content: '';
+  position: absolute;
+  left: 0.45rem;
+  top: 0.15rem;
+  width: 0.55rem;
+  height: 1rem;
+  border-right: 0.2rem solid rgb(var(--color-background));
+  border-bottom: 0.2rem solid rgb(var(--color-background));
+  transform: rotate(45deg) scale(0.4);
+  opacity: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.gift-wrap-toggle__input:checked + .gift-wrap-toggle__box {
+  border-color: rgb(var(--color-foreground));
+  background: rgb(var(--color-foreground));
+}
+
+.gift-wrap-toggle__input:checked + .gift-wrap-toggle__box::after {
+  opacity: 1;
+  transform: rotate(45deg) scale(1);
+}
+
+.gift-wrap-toggle__input:focus-visible + .gift-wrap-toggle__box {
+  outline: 0.2rem solid rgb(var(--color-foreground));
+  outline-offset: 0.2rem;
+}
+
+.gift-wrap-toggle:hover .gift-wrap-toggle__box {
+  border-color: rgb(var(--color-foreground));
+}
+
+/* Summary of what was chosen, shown once a wrap is saved. */
+.gift-wrap-toggle__summary {
+  display: block;
+  margin: 0.2rem 0 0 2.9rem;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  color: rgba(var(--color-foreground), 0.68);
+}
+
+.gift-wrap-toggle__edit {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-left: 0.6rem;
+  font: inherit;
+  color: rgb(var(--color-foreground));
+  text-decoration: underline;
+  text-underline-offset: 0.25rem;
+  cursor: pointer;
+}
+
+.gift-wrap-row.is-busy {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   C. MODAL
+   -------------------------------------------------------------------------- */
+
+.gift-wrap-modal {
+  position: fixed;
+  inset: 0;
+  /* Above the cart drawer, which this theme puts at z-index 1000. */
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.gift-wrap-modal[hidden] {
+  display: none;
+}
+
+.gift-wrap-modal__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(var(--color-foreground), 0.45);
+  animation: giftWrapFade 0.2s ease-out;
+}
+
+.gift-wrap-modal__dialog {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(112rem, 100%);
+  max-height: min(86vh, 88rem);
+  background: rgb(var(--color-background));
+  color: rgb(var(--color-foreground));
+  box-shadow: 0 2rem 6rem rgba(var(--color-shadow), 0.28);
+  animation: giftWrapRise 0.24s cubic-bezier(0.4, 0.02, 0.2, 1);
+  overflow: hidden;
+}
+
+@keyframes giftWrapFade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes giftWrapRise {
+  from {
+    opacity: 0;
+    transform: translateY(1.6rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gift-wrap-modal__overlay,
+  .gift-wrap-modal__dialog {
+    animation: none;
+  }
+}
+
+.gift-wrap-modal__head {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex: 0 0 auto;
+  padding: 1.6rem 2rem;
+  border-bottom: 0.1rem solid rgba(var(--color-foreground), 0.12);
+}
+
+.gift-wrap-modal__head-icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  flex: 0 0 auto;
+}
+
+.gift-wrap-modal__head-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.gift-wrap-modal__title {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.14rem;
+  text-transform: uppercase;
+}
+
+.gift-wrap-modal__close {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.gift-wrap-modal__close svg {
+  width: 1.8rem;
+  height: 1.8rem;
+}
+
+.gift-wrap-modal__close:hover {
+  background: rgba(var(--color-foreground), 0.06);
+}
+
+/* Two panes on desktop, stacked on mobile. minmax(0, …) on the first column
+   stops the image grid from forcing the whole dialog wider than the viewport. */
+.gift-wrap-modal__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+  gap: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gift-wrap-modal__picker {
+  padding: 2.2rem;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+
+.gift-wrap-modal__side {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2.2rem;
+  border-left: 0.1rem solid rgba(var(--color-foreground), 0.12);
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.gift-wrap-modal__subtitle {
+  margin: 0 0 1.6rem;
+  font-size: 1.7rem;
+  line-height: 1.4;
+}
+
+/* --- Wrap options grid --------------------------------------------------- */
+
+.gift-wrap-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.8rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 0;
+}
+
+.gift-wrap-option {
+  margin: 0;
+}
+
+.gift-wrap-option__label {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+}
+
+.gift-wrap-option__input {
+  position: absolute;
+  width: 1.8rem;
+  height: 1.8rem;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.gift-wrap-option__radio {
+  position: relative;
+  flex: 0 0 auto;
+  width: 1.8rem;
+  height: 1.8rem;
+  margin-top: 0.2rem;
+  border: 0.13rem solid rgba(var(--color-foreground), 0.4);
+  border-radius: 50%;
+  background: rgb(var(--color-background));
+  transition: border-color 0.15s ease;
+}
+
+.gift-wrap-option__radio::after {
+  content: '';
+  position: absolute;
+  inset: 0.3rem;
+  border-radius: 50%;
+  background: rgb(var(--color-foreground));
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+
+.gift-wrap-option__input:checked + .gift-wrap-option__radio {
+  border-color: rgb(var(--color-foreground));
+}
+
+.gift-wrap-option__input:checked + .gift-wrap-option__radio::after {
+  transform: scale(1);
+}
+
+.gift-wrap-option__input:focus-visible + .gift-wrap-option__radio {
+  outline: 0.2rem solid rgb(var(--color-foreground));
+  outline-offset: 0.2rem;
+}
+
+.gift-wrap-option__body {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* A ring on the image as well as the radio. The reference marks the choice
+   only on the tiny radio, which is easy to miss on a grid of similar papers. */
+.gift-wrap-option__figure {
+  margin: 0;
+  border: 0.15rem solid transparent;
+  transition: border-color 0.15s ease;
+  background: rgba(var(--color-foreground), 0.04);
+}
+
+.gift-wrap-option__input:checked ~ .gift-wrap-option__body .gift-wrap-option__figure {
+  border-color: rgb(var(--color-foreground));
+}
+
+.gift-wrap-option__figure img,
+.gift-wrap-option__figure svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.gift-wrap-option__name {
+  display: block;
+  margin-top: 0.7rem;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: rgba(var(--color-foreground), 0.85);
+}
+
+/* --- Message ------------------------------------------------------------- */
+
+.gift-wrap-message__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  cursor: pointer;
+  font-size: 1.6rem;
+  line-height: 1.4;
+}
+
+.gift-wrap-message__hint {
+  margin: 0.8rem 0 1.2rem;
+  font-size: 1.25rem;
+  line-height: 1.55;
+  color: rgba(var(--color-foreground), 0.62);
+}
+
+.gift-wrap-message__field {
+  position: relative;
+}
+
+.gift-wrap-message__input {
+  width: 100%;
+  min-height: 12rem;
+  padding: 1.2rem 1.2rem 3rem;
+  border: 0.1rem solid rgba(var(--color-foreground), 0.25);
+  border-radius: 0;
+  background: rgb(var(--color-background));
+  color: inherit;
+  font: inherit;
+  font-size: 1.4rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.gift-wrap-message__input:disabled {
+  opacity: 0.5;
+  resize: none;
+}
+
+.gift-wrap-message__count {
+  position: absolute;
+  right: 1.2rem;
+  bottom: 1rem;
+  font-size: 1.2rem;
+  color: rgba(var(--color-foreground), 0.55);
+  pointer-events: none;
+}
+
+/* --- Details list ------------------------------------------------------- */
+
+.gift-wrap-details__title {
+  margin: 0 0 1rem;
+  font-size: 1.7rem;
+  line-height: 1.4;
+}
+
+.gift-wrap-details__list {
+  margin: 0;
+  padding-left: 2rem;
+  font-size: 1.3rem;
+  line-height: 1.6;
+  color: rgba(var(--color-foreground), 0.75);
+}
+
+.gift-wrap-details__list li + li {
+  margin-top: 0.7rem;
+}
+
+/* --- Save --------------------------------------------------------------- */
+
+.gift-wrap-modal__save {
+  width: 100%;
+  margin-top: auto;
+  letter-spacing: 0.14rem;
+  text-transform: uppercase;
+}
+
+.gift-wrap-modal__save[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Save is disabled while the request is in flight, so this only has to read as
+   "working" rather than "unavailable". */
+.gift-wrap-modal__save.is-loading {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.gift-wrap-modal__error {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: rgb(200, 40, 40);
+}
+
+.gift-wrap-modal__error:empty {
+  display: none;
+}
+
+.gift-wrap-empty {
+  margin: 0;
+  padding: 2rem;
+  border: 0.1rem dashed rgba(var(--color-foreground), 0.3);
+  font-size: 1.35rem;
+  line-height: 1.6;
+  color: rgba(var(--color-foreground), 0.7);
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE
+   The side pane drops under the picker, and the save button pins to the
+   bottom of the dialog so it is always reachable without scrolling to it.
+   -------------------------------------------------------------------------- */
+
+@media screen and (max-width: 989px) {
+  .gift-wrap-modal {
+    padding: 0;
+  }
+
+  .gift-wrap-modal__dialog {
+    width: 100%;
+    max-height: 100%;
+    height: 100%;
+  }
+
+  .gift-wrap-modal__body {
+    grid-template-columns: minmax(0, 1fr);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gift-wrap-modal__picker,
+  .gift-wrap-modal__side {
+    overflow: visible;
+  }
+
+  .gift-wrap-modal__side {
+    border-left: 0;
+    border-top: 0.1rem solid rgba(var(--color-foreground), 0.12);
+  }
+
+  .gift-wrap-modal__save {
+    position: sticky;
+    bottom: 0;
+    margin-top: 1rem;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .gift-wrap-options {
+    gap: 1.4rem;
+  }
+
+  .gift-wrap-modal__picker,
+  .gift-wrap-modal__side {
+    padding: 1.6rem;
+  }
+}

@@ -22,12 +22,30 @@
 {%- endcomment -%}
 
 {%- liquid
+  # RESOLVING THE CHARGE PRODUCT — kept identical in
+  # snippets/gift-wrap-config.liquid and sections/main-cart-items.liquid.
+  #
+  # The picker wins, but a product whose handle is `gift-wrap` is picked up on
+  # its own. That fallback exists because config/settings_data.json is part of
+  # this repository: a value chosen in the theme editor is overwritten the next
+  # time the theme is pushed from here, and the charge would quietly stop
+  # applying. Naming the product Gift Wrap is enough to make it survive that.
   assign fee_product = settings.gift_wrap_product
+  if fee_product == blank
+    assign fee_product = all_products['gift-wrap']
+  endif
+
   assign fee_product_id = ''
   assign fee_variant_id = ''
 
   if fee_product != blank
+    # first_available_variant is nil when nothing is in stock, which would leave
+    # the charge silently switched off. Falling back to the first variant keeps
+    # it working — the product should have inventory tracking off anyway.
     assign fee_variant = fee_product.selected_or_first_available_variant
+    if fee_variant == blank
+      assign fee_variant = fee_product.variants.first
+    endif
     if fee_variant != blank
       assign fee_product_id = fee_product.id
       assign fee_variant_id = fee_variant.id

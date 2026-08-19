@@ -39,12 +39,30 @@
   own row, so the charge is not itself offered a "gift wrap this item" checkbox.
 {%- endcomment -%}
 {%- liquid
+  # RESOLVING THE CHARGE PRODUCT — kept identical in
+  # snippets/gift-wrap-config.liquid and sections/main-cart-items.liquid.
+  #
+  # The picker wins, but a product whose handle is `gift-wrap` is picked up on
+  # its own. That fallback exists because config/settings_data.json is part of
+  # this repository: a value chosen in the theme editor is overwritten the next
+  # time the theme is pushed from here, and the charge would quietly stop
+  # applying. Naming the product Gift Wrap is enough to make it survive that.
   assign fee_product = settings.gift_wrap_product
+  if fee_product == blank
+    assign fee_product = all_products['gift-wrap']
+  endif
+
   assign fee_product_id = ''
   assign fee_price = 0
 
   if fee_product != blank
+    # first_available_variant is nil when nothing is in stock, which would leave
+    # the charge silently switched off. Falling back to the first variant keeps
+    # it working — the product should have inventory tracking off anyway.
     assign fee_variant = fee_product.selected_or_first_available_variant
+    if fee_variant == blank
+      assign fee_variant = fee_product.variants.first
+    endif
     if fee_variant != blank
       assign fee_product_id = fee_product.id
       assign fee_price = fee_variant.price
@@ -80,6 +98,23 @@
         </p>
       {%- endif -%}
     </div>
+
+    {%- comment -%}
+      Theme editor only. Without this the failure is invisible: wrapping keeps
+      working, the popup keeps saving, and nothing is ever charged — which is
+      exactly the sort of thing that goes unnoticed until an order arrives.
+      request.design_mode keeps it away from shoppers.
+    {%- endcomment -%}
+    {%- if request.design_mode and section.settings.enable_gift_wrap and fee_product_id == blank -%}
+      <p class="gift-wrap-empty">
+        <strong>Gift wrapping is not charging anything.</strong>
+        Create a product named <strong>Gift Wrap</strong> at the price wrapping should cost, with
+        <em>Track quantity</em> off and <em>This is a physical product</em> off, and leave it
+        published to the Online Store — it will be picked up automatically. Or choose any product
+        under <strong>Theme settings → Cart → Gift wrap</strong>.
+        Only you can see this message.
+      </p>
+    {%- endif -%}
 
     <form action="{{ routes.cart_url }}" class="cart__contents critical-hidden" method="post" id="cart">
       <div class="cart__items" id="main-cart-items" data-id="{{ section.id }}">

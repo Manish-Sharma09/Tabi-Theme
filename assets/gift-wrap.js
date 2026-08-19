@@ -253,7 +253,17 @@
      what lets one change.js call set the whole charge. */
   function syncFee(state) {
     var feeId = feeVariantId();
-    if (!feeId) return Promise.resolve({ state: state, changed: false });
+    if (!feeId) {
+      /* Loud in the console, silent on the page. A shopper must never be told
+         the store is misconfigured, but "the wrap saved and nothing was
+         charged" is otherwise indistinguishable from "wrapping is free". */
+      console.warn(
+        '[gift-wrap] no charge product resolved, so wrapping is free. ' +
+          'Create a product with the handle "gift-wrap", published to the Online Store, ' +
+          'or pick one under Theme settings > Cart > Gift wrap.'
+      );
+      return Promise.resolve({ state: state, changed: false });
+    }
 
     var wanted = wrappedUnits(state, feeId);
     var line = feeLine(state, feeId);

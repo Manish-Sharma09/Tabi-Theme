@@ -1472,7 +1472,7 @@
         "type": "product",
         "id": "gift_wrap_product",
         "label": "Gift wrap charge product",
-        "info": "Charged once per wrapped item. Create a product called Gift Wrap priced at whatever wrapping should cost, turn OFF \"Track quantity\", turn OFF \"This is a physical product\", and unpublish it from every sales channel so it cannot be found or bought on its own. Leave this empty to offer wrapping free of charge. The wrapping papers themselves are set up per-section, in Cart page → Cart items."
+        "info": "Charged once per wrapped item. Create a product called \"Gift Wrap\" — that handle is picked up automatically, so this picker is optional — priced at whatever wrapping should cost. Turn OFF \"Track quantity\" and OFF \"This is a physical product\". It MUST stay published to the Online Store, otherwise it cannot be added to a cart at all; keep it out of every collection instead so nobody stumbles onto it. With no such product, wrapping is offered free of charge. The wrapping papers themselves are set up per-section, in Cart page → Cart items."
       }
     ]
   }

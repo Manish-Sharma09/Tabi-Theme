@@ -34,6 +34,12 @@
   if fee_product == blank
     assign fee_product = all_products['gift-wrap']
   endif
+  if fee_product == blank
+    assign fee_product = all_products['gift-wrapping']
+  endif
+  if fee_product == blank
+    assign fee_product = all_products['giftwrap']
+  endif
 
   assign fee_product_id = ''
   assign fee_variant_id = ''

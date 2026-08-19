@@ -625,8 +625,20 @@
     max-height: 100%;
   }
 
+  /* display: block, NOT a one-column grid.
+
+     A grid sizes an `auto` row from its items' max-content contribution, which
+     is measured in an intrinsic pass where the column width is not yet known.
+     The wrapping paper images are `width: 100%`, so in that pass they have no
+     width to derive a height from, and they contributed nothing. The row came
+     out shorter than the cards, and the final layout — where the width IS known
+     and the images do get their real height — overflowed it: the second and
+     third rows of papers ran underneath the message pane.
+
+     Block layout has no such two-pass problem. The picker's height is the sum
+     of what is inside it, so the side pane can only ever start after it ends. */
   .gift-wrap-modal__body {
-    grid-template-columns: minmax(0, 1fr);
+    display: block;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }

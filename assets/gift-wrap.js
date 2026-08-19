@@ -522,38 +522,69 @@
   /* EVENTS — all delegated, so re-rendered rows need no re-binding          */
   /* ---------------------------------------------------------------------- */
 
-  document.addEventListener('change', function (event) {
-    var target = event.target;
-    if (!target) return;
+  /* CAPTURE phase, and it stops the event dead. Both of those are deliberate.
 
-    if (target.matches('[data-gift-wrap-checkbox]')) {
-      var line = target.getAttribute('data-line');
-      var quantity = target.getAttribute('data-quantity') || 1;
+     <cart-items> binds its own `change` listener and filters nothing — every
+     change that reaches it is treated as a quantity edit:
 
-      if (target.checked) {
-        openModal(line, quantity, {
-          name: target.getAttribute('data-wrap-name') || '',
-          message: target.getAttribute('data-wrap-message') || ''
-        });
-      } else {
-        removeWrap(line, quantity);
+       validateQuantity(event) {
+         const inputValue = parseInt(event.target.value);   // 'on'  -> NaN
+         ...
+         } else if (inputValue % parseInt(event.target.step) !== 0) {   // NaN !== 0
+           message = ...step_error...                       // always true
+
+     The gift wrap checkbox is a row inside the cart table, so ticking it landed
+     in there as a quantity of NaN. That tripped Dawn's "you can only add this
+     item in increments of" validation bubble over the open dialog, called
+     setCustomValidity on the checkbox — leaving it permanently invalid, which
+     also blocks the cart form's no-JS submit — and then threw a TypeError in
+     resetQuantityInput, which looks up #Quantity-undefined.
+
+     Handling these during capture, before the event has reached <cart-items> at
+     all, and stopping propagation there is what keeps the two apart. The
+     control's own state is already updated by the time a change event is
+     dispatched, so reading target.checked here is safe. */
+  document.addEventListener(
+    'change',
+    function (event) {
+      var target = event.target;
+      if (!target || !target.matches) return;
+
+      var isCheckbox = target.matches('[data-gift-wrap-checkbox]');
+      var isMessageToggle = target.matches('[data-gift-wrap-message-toggle]');
+      var isWrapChoice = target.matches('input[name="gift_wrap_option"]');
+      if (!isCheckbox && !isMessageToggle && !isWrapChoice) return;
+
+      event.stopPropagation();
+
+      if (isCheckbox) {
+        var line = target.getAttribute('data-line');
+        var quantity = target.getAttribute('data-quantity') || 1;
+
+        if (target.checked) {
+          openModal(line, quantity, {
+            name: target.getAttribute('data-wrap-name') || '',
+            message: target.getAttribute('data-wrap-message') || ''
+          });
+        } else {
+          removeWrap(line, quantity);
+        }
+        return;
       }
-      return;
-    }
 
-    if (target.matches('[data-gift-wrap-message-toggle]')) {
-      setMessageEnabled(target.checked);
-      if (target.checked) {
-        var input = messageParts().input;
-        if (input) input.focus();
+      if (isMessageToggle) {
+        setMessageEnabled(target.checked);
+        if (target.checked) {
+          var input = messageParts().input;
+          if (input) input.focus();
+        }
+        return;
       }
-      return;
-    }
 
-    if (target.matches('input[name="gift_wrap_option"]')) {
       refreshSaveState();
-    }
-  });
+    },
+    true
+  );
 
   document.addEventListener('input', function (event) {
     if (event.target && event.target.matches('[data-gift-wrap-message]')) updateCount();

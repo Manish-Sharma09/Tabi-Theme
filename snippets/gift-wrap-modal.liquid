@@ -108,15 +108,24 @@
                     <span class="gift-wrap-option__figure">
                       {%- if wrap_image != blank -%}
                         {%- comment -%}
-                          theme-check-disable ImgWidthAndHeight
-                          No width/height attributes on purpose: a pasted URL
-                          has no dimensions to read. The stylesheet pins these
-                          to aspect-ratio 4 / 3 with object-fit: cover, so the
-                          box is reserved before the image lands either way
-                          and there is no layout shift to prevent.
+                          640x480 is the RENDERED box, not the file. The file's
+                          own dimensions are unknown — a pasted CDN URL carries
+                          none — and they would be the wrong thing to state
+                          anyway: the stylesheet crops every one of these to
+                          4 / 3 with object-fit: cover, so 4 / 3 is the ratio
+                          the browser needs in order to reserve the right space.
+
+                          Without it the image has no intrinsic size until it
+                          loads, and any layout pass that has to measure it
+                          before then measures zero.
                         {%- endcomment -%}
-                        <img src="{{ wrap_image }}" alt="{{ wrap_name | escape }}" loading="lazy">
-                        {%- comment -%}theme-check-enable ImgWidthAndHeight{%- endcomment -%}
+                        <img
+                          src="{{ wrap_image }}"
+                          alt="{{ wrap_name | escape }}"
+                          width="640"
+                          height="480"
+                          loading="lazy"
+                        >
                       {%- else -%}
                         {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
                       {%- endif -%}

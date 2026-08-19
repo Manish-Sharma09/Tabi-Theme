@@ -1,8 +1,12 @@
 {{ 'component-cart.css' | asset_url | stylesheet_tag }}
 {{ 'component-cart-items.css' | asset_url | stylesheet_tag }}
+{%- comment -%}
+  gift-wrap.js is loaded once for the whole site by snippets/gift-wrap-config,
+  because it also has to maintain the charge on templates that have no cart
+  section. Only the stylesheet belongs here.
+{%- endcomment -%}
 {%- if section.settings.enable_gift_wrap -%}
   {{ 'gift-wrap.css' | asset_url | stylesheet_tag }}
-  <script src="{{ 'gift-wrap.js' | asset_url }}" defer="defer"></script>
 {%- endif -%}
 {{ 'component-totals.css' | asset_url | stylesheet_tag }}
 {{ 'component-price.css' | asset_url | stylesheet_tag }}
@@ -22,6 +26,31 @@
     }
   }
 {%- endstyle -%}
+
+{%- comment -%}
+  THE GIFT WRAP CHARGE — the part of it this section needs.
+
+  `settings.gift_wrap_product` is a THEME setting, not a section setting,
+  because the charge is a store-wide invariant: snippets/gift-wrap-config.liquid
+  renders on every template and is what keeps the cart's charge line in step,
+  and a snippet in the layout has no way to read a section's settings.
+
+  All this section does with it is price the label and recognise the charge's
+  own row, so the charge is not itself offered a "gift wrap this item" checkbox.
+{%- endcomment -%}
+{%- liquid
+  assign fee_product = settings.gift_wrap_product
+  assign fee_product_id = ''
+  assign fee_price = 0
+
+  if fee_product != blank
+    assign fee_variant = fee_product.selected_or_first_available_variant
+    if fee_variant != blank
+      assign fee_product_id = fee_product.id
+      assign fee_price = fee_variant.price
+    endif
+  endif
+-%}
 
 {%- unless settings.cart_type == 'drawer' -%}
   <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
@@ -83,7 +112,16 @@
 
               <tbody>
                 {%- for item in cart.items -%}
-                  <tr class="cart-item" id="CartItem-{{ item.index | plus: 1 }}">
+                  {%- liquid
+                    assign is_fee_line = false
+                    if fee_product_id != blank and item.product.id == fee_product_id
+                      assign is_fee_line = true
+                    endif
+                  -%}
+                  <tr
+                    class="cart-item{% if is_fee_line %} cart-item--gift-wrap-fee{% endif %}"
+                    id="CartItem-{{ item.index | plus: 1 }}"
+                  >
                     <td class="cart-item__media">
                       {% if item.image %}
                         {% comment %} Leave empty space due to a:empty CSS display: none rule {% endcomment %}
@@ -229,6 +267,17 @@
                       endif
                     -%}
                     <td class="cart-item__quantity{% if has_qty_rules or has_vol_pricing %} cart-item__quantity--info{% endif %}">
+                      {%- comment -%}
+                        The charge's quantity is derived from the wrap
+                        selections, so it is printed rather than offered as a
+                        control — anything typed into a stepper here would be
+                        overwritten by the next sync. The stepper and the remove
+                        button are hidden by gift-wrap.css; the non-JS form post
+                        still carries the correct value from the input inside.
+                      {%- endcomment -%}
+                      {%- if is_fee_line -%}
+                        <p class="gift-wrap-fee__quantity">&times; {{ item.quantity }}</p>
+                      {%- endif -%}
                       <quantity-popover>
                         <div class="cart-item__quantity-wrapper quantity-popover-wrapper">
                           <label class="visually-hidden" for="Quantity-{{ item.index | plus: 1 }}">
@@ -439,8 +488,8 @@
                     tucked inside the details cell, so it can never collide with
                     the quantity or price cells at any width.
                   {%- endcomment -%}
-                  {%- if section.settings.enable_gift_wrap -%}
-                    {%- render 'gift-wrap-item', item: item, colspan: 5 -%}
+                  {%- if section.settings.enable_gift_wrap and is_fee_line == false -%}
+                    {%- render 'gift-wrap-item', item: item, colspan: 5, fee_price: fee_price -%}
                   {%- endif -%}
                 {%- endfor -%}
               </tbody>
@@ -483,7 +532,8 @@
 {%- if section.settings.enable_gift_wrap and cart != empty -%}
   {%- render 'gift-wrap-modal',
     wrap_blocks: section.blocks,
-    details: section.settings.gift_wrap_details
+    details: section.settings.gift_wrap_details,
+    fee_price: fee_price
   -%}
 {%- endif -%}
 

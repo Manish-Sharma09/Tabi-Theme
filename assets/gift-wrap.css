@@ -4,9 +4,12 @@
      A. Cart drawer CTA  — "Want to gift wrap?  CLICK HERE"
      B. Cart page row    — "Gift wrap this item" checkbox under each line
      C. Modal            — wrap picker + optional gift message
+     D. Charge line      — the gift wrap fee product's row in the cart table
 
    Colours come from the theme's own scheme variables, so this follows whatever
    colour scheme the cart section is set to rather than hard-coding a palette.
+   The one exception is the modal, which is re-parented to <body> and therefore
+   has to declare its own — see section C.
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
@@ -64,6 +67,10 @@
 }
 
 .gift-wrap-toggle {
+  /* Anchors .gift-wrap-toggle__input, which is taken out of flow below. Without
+     it the input would resolve against whatever ancestor happens to be
+     positioned and drift away from the box it is meant to sit behind. */
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 1rem;
@@ -75,14 +82,20 @@
   padding: 0.6rem 0;
 }
 
+.gift-wrap-toggle__price {
+  color: rgba(var(--color-foreground), 0.6);
+}
+
 /* The native box is kept in the accessibility tree but visually replaced, so
    the tick is styled consistently across browsers. */
 .gift-wrap-toggle__input {
   position: absolute;
+  left: 0;
+  top: 50%;
   width: 1.6rem;
   height: 1.6rem;
+  margin: -0.8rem 0 0;
   opacity: 0;
-  margin: 0;
   cursor: pointer;
 }
 
@@ -329,77 +342,44 @@
   border: 0;
 }
 
+/* Anchors the visually hidden radio. */
 .gift-wrap-option {
+  position: relative;
   margin: 0;
 }
 
-.gift-wrap-option__label {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  cursor: pointer;
-}
-
+/* Kept in the accessibility tree and focusable, just not painted — the visible
+   control is .gift-wrap-option__radio. Sized and placed over the radio so a
+   focus ring lands somewhere sensible in browsers that draw their own. */
 .gift-wrap-option__input {
   position: absolute;
-  width: 1.8rem;
-  height: 1.8rem;
-  opacity: 0;
+  top: 0.8rem;
+  left: 0.8rem;
+  width: 2rem;
+  height: 2rem;
   margin: 0;
+  opacity: 0;
   cursor: pointer;
 }
 
-.gift-wrap-option__radio {
-  position: relative;
-  flex: 0 0 auto;
-  width: 1.8rem;
-  height: 1.8rem;
-  margin-top: 0.2rem;
-  border: 0.13rem solid rgba(var(--color-foreground), 0.4);
-  border-radius: 50%;
-  background: rgb(var(--color-background));
-  transition: border-color 0.15s ease;
-}
-
-.gift-wrap-option__radio::after {
-  content: '';
-  position: absolute;
-  inset: 0.3rem;
-  border-radius: 50%;
-  background: rgb(var(--color-foreground));
-  transform: scale(0);
-  transition: transform 0.15s ease;
-}
-
-.gift-wrap-option__input:checked + .gift-wrap-option__radio {
-  border-color: rgb(var(--color-foreground));
-}
-
-.gift-wrap-option__input:checked + .gift-wrap-option__radio::after {
-  transform: scale(1);
-}
-
-.gift-wrap-option__input:focus-visible + .gift-wrap-option__radio {
-  outline: 0.2rem solid rgb(var(--color-foreground));
-  outline-offset: 0.2rem;
-}
-
-.gift-wrap-option__body {
-  min-width: 0;
-  flex: 1 1 auto;
+/* display: block matters. As an inline box wrapped around the block-level
+   figure and name it would be split into anonymous block boxes, which is what
+   left stray border fragments beside the images and pushed the names over the
+   row beneath on narrow screens. */
+.gift-wrap-option__label {
+  display: block;
+  cursor: pointer;
 }
 
 /* A ring on the image as well as the radio. The reference marks the choice
    only on the tiny radio, which is easy to miss on a grid of similar papers. */
 .gift-wrap-option__figure {
+  display: block;
+  position: relative;
   margin: 0;
   border: 0.15rem solid transparent;
-  transition: border-color 0.15s ease;
   background: rgba(var(--color-foreground), 0.04);
-}
-
-.gift-wrap-option__input:checked ~ .gift-wrap-option__body .gift-wrap-option__figure {
-  border-color: rgb(var(--color-foreground));
+  transition: border-color 0.15s ease;
 }
 
 .gift-wrap-option__figure img,
@@ -409,6 +389,54 @@
   height: auto;
   aspect-ratio: 4 / 3;
   object-fit: cover;
+}
+
+/* Overlaid on the image rather than sitting in a column beside it. At 390px a
+   two-up grid has barely 15rem per cell, and a separate radio gutter took a
+   fifth of that away from the photo. */
+.gift-wrap-option__radio {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 0.13rem solid rgba(18, 18, 18, 0.45);
+  border-radius: 50%;
+  /* Opaque, so the dot reads against a pale or a busy wrapping paper alike. */
+  background: rgb(255, 255, 255);
+  box-shadow: 0 0.1rem 0.4rem rgba(0, 0, 0, 0.18);
+  transition: border-color 0.15s ease;
+}
+
+.gift-wrap-option__radio::after {
+  content: '';
+  position: absolute;
+  inset: 0.3rem;
+  border-radius: 50%;
+  background: rgb(18, 18, 18);
+  transform: scale(0);
+  transition: transform 0.15s ease;
+}
+
+.gift-wrap-option__input:checked + .gift-wrap-option__label .gift-wrap-option__figure {
+  border-color: rgb(var(--color-foreground));
+}
+
+.gift-wrap-option__input:checked + .gift-wrap-option__label .gift-wrap-option__radio {
+  border-color: rgb(18, 18, 18);
+}
+
+.gift-wrap-option__input:checked + .gift-wrap-option__label .gift-wrap-option__radio::after {
+  transform: scale(1);
+}
+
+.gift-wrap-option__input:focus-visible + .gift-wrap-option__label .gift-wrap-option__radio {
+  outline: 0.2rem solid rgb(var(--color-foreground));
+  outline-offset: 0.2rem;
+}
+
+.gift-wrap-option__label:hover .gift-wrap-option__figure {
+  border-color: rgba(var(--color-foreground), 0.35);
 }
 
 .gift-wrap-option__name {
@@ -422,6 +450,7 @@
 /* --- Message ------------------------------------------------------------- */
 
 .gift-wrap-message__head {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
@@ -489,11 +518,46 @@
   margin-top: 0.7rem;
 }
 
-/* --- Save --------------------------------------------------------------- */
+/* --- Footer ------------------------------------------------------------- */
+
+/* Outside the scrolling body, so Save is on screen whatever the shopper has
+   scrolled to. */
+.gift-wrap-modal__foot {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+  flex: 0 0 auto;
+  padding: 1.4rem 2.2rem;
+  border-top: 0.1rem solid rgba(var(--color-foreground), 0.12);
+  background: rgb(var(--color-background));
+}
+
+.gift-wrap-modal__foot-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.gift-wrap-modal__fee {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.4;
+}
+
+.gift-wrap-modal__error {
+  margin: 0;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  color: rgb(200, 40, 40);
+}
+
+.gift-wrap-modal__error:empty {
+  display: none;
+}
 
 .gift-wrap-modal__save {
-  width: 100%;
-  margin-top: auto;
+  flex: 0 0 auto;
+  min-width: 24rem;
+  margin: 0;
   letter-spacing: 0.14rem;
   text-transform: uppercase;
 }
@@ -510,17 +574,6 @@
   cursor: progress;
 }
 
-.gift-wrap-modal__error {
-  margin: 0;
-  font-size: 1.3rem;
-  line-height: 1.5;
-  color: rgb(200, 40, 40);
-}
-
-.gift-wrap-modal__error:empty {
-  display: none;
-}
-
 .gift-wrap-empty {
   margin: 0;
   padding: 2rem;
@@ -531,9 +584,31 @@
 }
 
 /* --------------------------------------------------------------------------
+   D. THE CHARGE LINE IN THE CART TABLE
+
+   Its quantity is derived from the wrap selections, so it is not the shopper's
+   to edit — anything typed here is overwritten by the next sync. The controls
+   are removed rather than disabled so nothing invites the click in the first
+   place, and Liquid prints the count in their place.
+   -------------------------------------------------------------------------- */
+
+.cart-item--gift-wrap-fee quantity-popover {
+  display: none;
+}
+
+.gift-wrap-fee__quantity {
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  color: rgba(var(--color-foreground), 0.75);
+}
+
+/* --------------------------------------------------------------------------
    RESPONSIVE
-   The side pane drops under the picker, and the save button pins to the
-   bottom of the dialog so it is always reachable without scrolling to it.
+
+   The dialog goes full-screen and the two panes stack. Only the middle section
+   scrolls: the title bar and the footer stay put, so Save is never more than a
+   tap away no matter how many wrapping papers there are.
    -------------------------------------------------------------------------- */
 
 @media screen and (max-width: 989px) {
@@ -541,10 +616,13 @@
     padding: 0;
   }
 
+  /* height: 100% of a position: fixed; inset: 0 parent, deliberately not 100vh
+     — on mobile Safari and Chrome 100vh is taller than the visible area, which
+     would push the footer under the browser's own toolbar. */
   .gift-wrap-modal__dialog {
     width: 100%;
-    max-height: 100%;
     height: 100%;
+    max-height: 100%;
   }
 
   .gift-wrap-modal__body {
@@ -553,6 +631,8 @@
     -webkit-overflow-scrolling: touch;
   }
 
+  /* The scroll now belongs to the body; nested scrollers here would trap the
+     gesture in whichever pane the finger happened to land on. */
   .gift-wrap-modal__picker,
   .gift-wrap-modal__side {
     overflow: visible;
@@ -563,10 +643,18 @@
     border-top: 0.1rem solid rgba(var(--color-foreground), 0.12);
   }
 
+  .gift-wrap-modal__foot {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.8rem;
+    padding: 1.2rem 1.6rem;
+    /* Clears the iOS home indicator. */
+    padding-bottom: max(1.2rem, env(safe-area-inset-bottom));
+  }
+
   .gift-wrap-modal__save {
-    position: sticky;
-    bottom: 0;
-    margin-top: 1rem;
+    min-width: 0;
+    width: 100%;
   }
 }
 
@@ -578,5 +666,10 @@
   .gift-wrap-modal__picker,
   .gift-wrap-modal__side {
     padding: 1.6rem;
+  }
+
+  .gift-wrap-modal__subtitle,
+  .gift-wrap-details__title {
+    font-size: 1.6rem;
   }
 }

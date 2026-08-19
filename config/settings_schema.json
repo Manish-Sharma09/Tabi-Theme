@@ -1463,6 +1463,16 @@
         "id": "cart_color_scheme",
         "label": "t:sections.all.colors.label",
         "default": "scheme-1"
+      },
+      {
+        "type": "header",
+        "content": "Gift wrap"
+      },
+      {
+        "type": "product",
+        "id": "gift_wrap_product",
+        "label": "Gift wrap charge product",
+        "info": "Charged once per wrapped item. Create a product called Gift Wrap priced at whatever wrapping should cost, turn OFF \"Track quantity\", turn OFF \"This is a physical product\", and unpublish it from every sales channel so it cannot be found or bought on its own. Leave this empty to offer wrapping free of charge. The wrapping papers themselves are set up per-section, in Cart page → Cart items."
       }
     ]
   }

@@ -788,8 +788,14 @@
           return;
         }
         refreshCart(json);
-        if (typeof window.publish === 'function' && window.PUB_SUB_EVENTS) {
-          window.publish(window.PUB_SUB_EVENTS.cartUpdate, {
+        /* constants.js declares PUB_SUB_EVENTS with `const`, which makes a
+           script-scope binding and NOT a property on window — so the old
+           window.PUB_SUB_EVENTS test was always false and this never fired.
+           The bare identifier resolves through the shared global lexical
+           environment; typeof keeps it safe if constants.js ever goes away. */
+        var events = typeof PUB_SUB_EVENTS !== 'undefined' ? PUB_SUB_EVENTS : null;
+        if (typeof window.publish === 'function' && events) {
+          window.publish(events.cartUpdate, {
             source: 'card-size-popup',
             productVariantId: variantId,
             cartData: json

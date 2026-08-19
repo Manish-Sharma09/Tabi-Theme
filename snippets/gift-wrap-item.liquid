@@ -2,8 +2,9 @@
   "Gift wrap this item" row for one cart line, on the cart page.
 
   Accepts:
-  - item:    {Object} the cart line item
-  - colspan: {Number} columns to span in the cart table (optional, default 5)
+  - item:      {Object} the cart line item
+  - colspan:   {Number} columns to span in the cart table (optional, default 5)
+  - fee_price: {Number} price of one gift wrap charge, in cents (optional)
 
   State lives entirely in the line's own properties, so it survives reloads and
   is what the warehouse sees on the order — there is no parallel client-side
@@ -29,6 +30,19 @@
   assign line = item.index | plus: 1
   assign span = colspan | default: 5
   assign input_id = 'GiftWrapItem-' | append: line
+
+  # Priced per unit, so a line of three shirts is three charges. Stated on the
+  # row rather than only in the popup: the cost should be visible before the
+  # shopper commits to opening anything.
+  assign fee_label = ''
+  if fee_price != blank and fee_price > 0
+    assign fee_each = fee_price | money
+    if item.quantity > 1
+      assign fee_label = fee_each | append: ' each'
+    else
+      assign fee_label = fee_each
+    endif
+  endif
 -%}
 
 <tr class="gift-wrap-row" data-gift-wrap-row data-line="{{ line }}" data-quantity="{{ item.quantity }}">
@@ -49,7 +63,12 @@
         {% endif %}
       >
       <span class="gift-wrap-toggle__box" aria-hidden="true"></span>
-      <span>Gift wrap this item</span>
+      <span>
+        Gift wrap this item
+        {%- if fee_label != blank -%}
+          <span class="gift-wrap-toggle__price">({{ fee_label }})</span>
+        {%- endif -%}
+      </span>
     </label>
 
     {%- if is_wrapped -%}

@@ -1,0 +1,56 @@
+{%- comment -%}
+  Gift wrap charge — the store-wide facts, and the script that keeps them true.
+
+  Rendered ONCE per page from layout/theme.liquid. It has to be every page, not
+  just the cart, because the cart can be changed from anywhere: the drawer's
+  remove button and quantity stepper are on every template, and either of them
+  can leave the wrapping charge standing for an item that is no longer there.
+  Correcting that only on /cart would let a shopper who checks out from the
+  drawer pay for wrapping nothing.
+
+  WHY THE CHARGE IS A LINE ITEM
+  Shopify builds cart totals out of line items and nothing else. A line item
+  property or a cart attribute can carry information but not money, so charging
+  for wrapping means keeping a line of `settings.gift_wrap_product` in the cart
+  at a quantity equal to the number of wrapped units. That line is derived,
+  never authored — gift-wrap.js recomputes it from the cart after every change.
+
+  data-fee-current vs data-fee-needed is a staleness check that costs no
+  request: what the cart charges for right now, against what the wrap selections
+  call for. Equal on virtually every page view, and the script only reaches for
+  the network when they disagree.
+{%- endcomment -%}
+
+{%- liquid
+  assign fee_product = settings.gift_wrap_product
+  assign fee_product_id = ''
+  assign fee_variant_id = ''
+
+  if fee_product != blank
+    assign fee_variant = fee_product.selected_or_first_available_variant
+    if fee_variant != blank
+      assign fee_product_id = fee_product.id
+      assign fee_variant_id = fee_variant.id
+    endif
+  endif
+
+  assign fee_current = 0
+  assign fee_needed = 0
+  for item in cart.items
+    if fee_product_id != blank and item.product.id == fee_product_id
+      assign fee_current = fee_current | plus: item.quantity
+    elsif item.properties['Gift wrap'] != blank
+      assign fee_needed = fee_needed | plus: item.quantity
+    endif
+  endfor
+-%}
+
+<div
+  id="GiftWrapConfig"
+  hidden
+  data-fee-variant="{{ fee_variant_id }}"
+  data-fee-current="{{ fee_current }}"
+  data-fee-needed="{{ fee_needed }}"
+></div>
+
+<script src="{{ 'gift-wrap.js' | asset_url }}" defer="defer"></script>

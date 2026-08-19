@@ -368,6 +368,13 @@
       {%- render 'cart-drawer' -%}
     {%- endif -%}
 
+    {%- comment -%}
+      Outside the cart_type test on purpose: the gift wrap charge has to be kept
+      in step with the cart on every template, whichever cart style is in use.
+      See the snippet for why.
+    {%- endcomment -%}
+    {%- render 'gift-wrap-config' -%}
+
     {% sections 'header-group' %}
 
     <main id="MainContent" class="content-for-layout focus-none" role="main" tabindex="-1">

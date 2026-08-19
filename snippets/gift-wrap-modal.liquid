@@ -5,14 +5,18 @@
   re-render that follows every cart update.
 
   Accepts:
-  - wrap_blocks: {Array} section.blocks — only `gift_wrap_option` blocks are used.
+  - wrap_blocks:    {Array} section.blocks — only `gift_wrap_option` blocks are used.
       `{% render %}` has an isolated scope and cannot see `section`, so the
       blocks have to be handed in explicitly.
-  - details: {String} richtext shown under "Gift Wrap Details" (optional)
+  - details:     {String} richtext shown under "Gift wrap details" (optional)
+  - fee_price:   {Number} what one gift wrap costs, in cents (optional)
 
-  What it does NOT do: hold any per-item state. The modal is opened against a
-  line by gift-wrap.js, which fills the fields from that row's data attributes.
-  One modal serves every row.
+  fee_price is for the label only. Whether and how the charge is applied is
+  snippets/gift-wrap-config.liquid's business, not this dialog's.
+
+  What this snippet does NOT do: hold any per-item state. The modal is opened
+  against a line by gift-wrap.js, which fills the fields from that row's data
+  attributes. One modal serves every row.
 {%- endcomment -%}
 
 {%- liquid
@@ -22,6 +26,12 @@
       assign option_count = option_count | plus: 1
     endif
   endfor
+
+  assign has_fee = false
+  if fee_price != blank and fee_price > 0
+    assign has_fee = true
+    assign fee_label = fee_price | money
+  endif
 -%}
 
 <div
@@ -73,36 +83,46 @@
                     assign wrap_image = block.settings.image_url
                   endif
                 -%}
+                {%- comment -%}
+                  The input is a SIBLING of the label, not a child of it.
+
+                  That buys two things. The selected state can be expressed as
+                  `:checked + .gift-wrap-option__label …`, which is a plain
+                  sibling match rather than a chain that has to reach back out
+                  of the input's parent. And the label stays a block container
+                  holding block children — an inline <span> wrapped around a
+                  block <img> gets broken into anonymous block boxes, which is
+                  what previously left stray border fragments beside the images
+                  and let the names overlap the row below on narrow screens.
+                {%- endcomment -%}
                 <div class="gift-wrap-option" {{ block.shopify_attributes }}>
+                  <input
+                    type="radio"
+                    class="gift-wrap-option__input"
+                    id="{{ input_id }}"
+                    name="gift_wrap_option"
+                    value="{{ wrap_name | escape }}"
+                    data-wrap-image="{{ wrap_image }}"
+                  >
                   <label class="gift-wrap-option__label" for="{{ input_id }}">
-                    <input
-                      type="radio"
-                      class="gift-wrap-option__input"
-                      id="{{ input_id }}"
-                      name="gift_wrap_option"
-                      value="{{ wrap_name | escape }}"
-                      data-wrap-image="{{ wrap_image }}"
-                    >
-                    <span class="gift-wrap-option__radio" aria-hidden="true"></span>
-                    <span class="gift-wrap-option__body">
-                      <span class="gift-wrap-option__figure">
-                        {%- if wrap_image != blank -%}
-                          {%- comment -%}
-                            theme-check-disable ImgWidthAndHeight
-                            No width/height attributes on purpose: a pasted URL
-                            has no dimensions to read. The stylesheet pins these
-                            to aspect-ratio 4 / 3 with object-fit: cover, so the
-                            box is reserved before the image lands either way
-                            and there is no layout shift to prevent.
-                          {%- endcomment -%}
-                          <img src="{{ wrap_image }}" alt="{{ wrap_name | escape }}" loading="lazy">
-                          {%- comment -%}theme-check-enable ImgWidthAndHeight{%- endcomment -%}
-                        {%- else -%}
-                          {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
-                        {%- endif -%}
-                      </span>
-                      <span class="gift-wrap-option__name">{{ wrap_name }}</span>
+                    <span class="gift-wrap-option__figure">
+                      {%- if wrap_image != blank -%}
+                        {%- comment -%}
+                          theme-check-disable ImgWidthAndHeight
+                          No width/height attributes on purpose: a pasted URL
+                          has no dimensions to read. The stylesheet pins these
+                          to aspect-ratio 4 / 3 with object-fit: cover, so the
+                          box is reserved before the image lands either way
+                          and there is no layout shift to prevent.
+                        {%- endcomment -%}
+                        <img src="{{ wrap_image }}" alt="{{ wrap_name | escape }}" loading="lazy">
+                        {%- comment -%}theme-check-enable ImgWidthAndHeight{%- endcomment -%}
+                      {%- else -%}
+                        {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
+                      {%- endif -%}
+                      <span class="gift-wrap-option__radio" aria-hidden="true"></span>
                     </span>
+                    <span class="gift-wrap-option__name">{{ wrap_name }}</span>
                   </label>
                 </div>
               {%- endif -%}
@@ -172,18 +192,33 @@
             </ol>
           {%- endif -%}
         </div>
-
-        <p class="gift-wrap-modal__error" role="alert" data-gift-wrap-error></p>
-
-        <button
-          type="button"
-          class="button gift-wrap-modal__save"
-          data-gift-wrap-save
-          {% if option_count == 0 %}disabled{% endif %}
-        >
-          Save &amp; continue
-        </button>
       </div>
+    </div>
+
+    {%- comment -%}
+      The footer sits OUTSIDE .gift-wrap-modal__body, which is the element that
+      scrolls. On a phone the whole dialog is full-screen and the option grid is
+      taller than the viewport, so a Save button placed at the end of the right
+      pane would sit below the fold — the shopper had to scroll past every
+      wrapping paper and the details list to reach it. As its own flex row it is
+      always on screen.
+    {%- endcomment -%}
+    <div class="gift-wrap-modal__foot">
+      <div class="gift-wrap-modal__foot-text">
+        {%- if has_fee -%}
+          <p class="gift-wrap-modal__fee">{{ fee_label }} per item</p>
+        {%- endif -%}
+        <p class="gift-wrap-modal__error" role="alert" data-gift-wrap-error></p>
+      </div>
+
+      <button
+        type="button"
+        class="button gift-wrap-modal__save"
+        data-gift-wrap-save
+        {% if option_count == 0 %}disabled{% endif %}
+      >
+        Save &amp; continue
+      </button>
     </div>
   </div>
 </div>

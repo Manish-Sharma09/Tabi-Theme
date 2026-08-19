@@ -1,16 +1,34 @@
 /* ==========================================================================
    gift-wrap.js
 
-   Per-line gift wrapping on the cart page.
+   Per-line gift wrapping on the cart page, plus the charge that goes with it.
 
-   The choice is stored as LINE ITEM PROPERTIES via /cart/change.js, not in
-   localStorage or a hidden form. That means it survives reloads, follows the
-   line through checkout, and appears on the order for whoever packs it — there
-   is no second copy of the truth to drift.
+   TWO PIECES OF STATE, BOTH SERVER-SIDE
+   -------------------------------------
+   1. The choice itself is stored as LINE ITEM PROPERTIES via /cart/change.js —
+      not in localStorage or a hidden form. It survives reloads, follows the
+      line through checkout, and appears on the order for whoever packs it.
+
+   2. The money is a real cart line. Shopify totals come from line items alone,
+      so a fee cannot be conjured from a property or an attribute: charging for
+      wrapping means keeping a line of the configured "gift wrap" product in the
+      cart, at a quantity equal to the number of wrapped items. That line is
+      derived, never authored — `syncFee` recomputes it from the cart every time
+      the cart changes.
+
+   Because both live in the cart, a refresh restores everything and there is no
+   second copy of the truth to drift.
 
    Every handler is delegated from `document`, because cart.js replaces the
    whole .js-contents block after each update and anything bound directly to a
    row would be thrown away with it.
+
+   LOADED ON EVERY TEMPLATE, not just the cart page. The picker half only has
+   anything to bind to on /cart, but the charge half has to run wherever the
+   cart can change — the drawer's remove button and quantity stepper are on
+   every page, and either can leave the charge standing for an item that is no
+   longer in the cart. What it needs to do that comes from #GiftWrapConfig,
+   which snippets/gift-wrap-config.liquid renders sitewide.
    ========================================================================== */
 (function () {
   'use strict';
@@ -28,12 +46,37 @@
      so a mid-flight section re-render cannot strand it. */
   var active = null;
 
+  /* Guards against overlapping reconciles — a burst of quantity changes fires
+     one cartUpdate each, and two syncs racing would both read a pre-write cart
+     and write the same quantity twice. */
+  var reconciling = false;
+
   function modal() {
     return document.getElementById('GiftWrapModal');
   }
 
+  /* Present on every template, unlike the modal, which only the cart page
+     renders. That is deliberate: the charge has to be maintained wherever the
+     cart can be changed, and the drawer's remove button is everywhere. */
+  function config() {
+    return document.getElementById('GiftWrapConfig');
+  }
+
   function el(selector, root) {
     return (root || document).querySelector(selector);
+  }
+
+  /* constants.js declares PUB_SUB_EVENTS with `const`, which creates a
+     script-scope binding and NOT a property on window — so window.PUB_SUB_EVENTS
+     is undefined and testing for it silently disables every publish. The bare
+     identifier does resolve, via the shared global lexical environment, and
+     typeof keeps it safe if constants.js is ever dropped. */
+  function pubSubEvents() {
+    return typeof PUB_SUB_EVENTS !== 'undefined' ? PUB_SUB_EVENTS : null;
+  }
+
+  function route(key, fallback) {
+    return (window.routes && window.routes[key]) || fallback;
   }
 
   /* ---------------------------------------------------------------------- */
@@ -79,33 +122,41 @@
       target.innerHTML = sectionInnerHTML(html, section.selector);
     });
 
-    // Same empty-state bookkeeping cart.js does, so the cart page and drawer
-    // do not get stuck showing an empty shell after the last item changes.
-    var isEmpty = state.item_count === 0;
-    ['cart-items', 'main-cart-footer'].forEach(function (id) {
-      var node = id === 'cart-items' ? el('cart-items') : document.getElementById(id);
-      if (node) node.classList.toggle('is-empty', isEmpty);
-    });
-    var drawer = el('cart-drawer');
-    if (drawer) drawer.classList.toggle('is-empty', isEmpty);
-
-    if (typeof window.publish === 'function' && window.PUB_SUB_EVENTS) {
-      window.publish(window.PUB_SUB_EVENTS.cartUpdate, {
-        source: 'gift-wrap',
-        cartData: state
+    /* Same empty-state bookkeeping cart.js does, so the cart page and drawer do
+       not get stuck showing an empty shell after the last item changes. Guarded
+       on the field being present: /cart/add.js answers with the added line, not
+       the whole cart, and has no item_count to read. */
+    if (typeof state.item_count === 'number') {
+      var isEmpty = state.item_count === 0;
+      ['cart-items', 'main-cart-footer'].forEach(function (id) {
+        var node = id === 'cart-items' ? el('cart-items') : document.getElementById(id);
+        if (node) node.classList.toggle('is-empty', isEmpty);
       });
+      var drawer = el('cart-drawer');
+      if (drawer) drawer.classList.toggle('is-empty', isEmpty);
+    }
+
+    /* Announcing the change is what keeps the header drawer's own copy of the
+       cart in step — cart.js listens for this and re-renders itself. */
+    var events = pubSubEvents();
+    if (typeof window.publish === 'function' && events) {
+      window.publish(events.cartUpdate, { source: 'gift-wrap', cartData: state });
     }
   }
 
   /* ---------------------------------------------------------------------- */
-  /* WRITE                                                                   */
+  /* CART REQUESTS                                                           */
   /* ---------------------------------------------------------------------- */
 
-  /* Quantity is sent as-is on purpose: /cart/change.js treats a missing
-     quantity inconsistently across payload shapes, and echoing the row's own
-     value removes the ambiguity without ever changing what is in the cart. */
-  function writeProperties(line, quantity, properties) {
-    var url = (window.routes && window.routes.cart_change_url) || '/cart/change';
+  /* Resolves with the cart state and renders NOTHING. Callers decide when to
+     paint, so a two-request flow (write the property, then correct the charge)
+     updates the page once at the end instead of flashing an intermediate cart
+     that has the wrap but not yet the fee. */
+  function cartPost(url, payload) {
+    payload.sections = sectionsToRender().map(function (s) {
+      return s.section;
+    });
+    payload.sections_url = window.location.pathname;
 
     return fetch(url, {
       method: 'POST',
@@ -114,27 +165,29 @@
         Accept: 'application/javascript',
         'X-Requested-With': 'XMLHttpRequest'
       },
-      body: JSON.stringify({
-        line: Number(line),
-        quantity: Number(quantity),
-        properties: properties,
-        sections: sectionsToRender().map(function (s) {
-          return s.section;
-        }),
-        sections_url: window.location.pathname
-      })
+      body: JSON.stringify(payload)
     })
       .then(function (res) {
         return res.json();
       })
       .then(function (state) {
         if (state && (state.status || state.errors)) {
-          var message = state.description || state.message || 'Could not update this item.';
+          var message = state.description || state.message || 'Could not update the cart.';
           throw new Error(typeof state.errors === 'string' ? state.errors : message);
         }
-        applySections(state);
         return state;
       });
+  }
+
+  /* Quantity is sent as-is on purpose: /cart/change.js treats a missing
+     quantity inconsistently across payload shapes, and echoing the row's own
+     value removes the ambiguity without ever changing what is in the cart. */
+  function writeProperties(line, quantity, properties) {
+    return cartPost(route('cart_change_url', '/cart/change'), {
+      line: Number(line),
+      quantity: Number(quantity),
+      properties: properties
+    });
   }
 
   /* Always send all three keys, using '' for the ones that are not set.
@@ -150,6 +203,109 @@
     properties[PROP_MESSAGE] = message || '';
     properties[PROP_IMAGE] = image || '';
     return properties;
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* THE CHARGE                                                              */
+  /* ---------------------------------------------------------------------- */
+
+  /* null when the merchant has not picked a charge product — wrapping is then
+     simply free, and nothing below runs. */
+  function feeVariantId() {
+    var box = config();
+    if (!box) return null;
+    var id = Number(box.getAttribute('data-fee-variant'));
+    return id > 0 ? id : null;
+  }
+
+  function isWrapped(item) {
+    var properties = item && item.properties;
+    return !!(properties && properties[PROP_WRAP]);
+  }
+
+  /* One charge per wrapped UNIT, not per wrapped line: a line of three shirts
+     marked for wrapping is three parcels to wrap. Read from the cart JSON
+     rather than the checkboxes, so it does not depend on the DOM having already
+     caught up with the write that just happened. */
+  function wrappedUnits(state, feeId) {
+    var total = 0;
+    (state.items || []).forEach(function (item) {
+      if (item.variant_id === feeId) return;
+      if (isWrapped(item)) total += item.quantity;
+    });
+    return total;
+  }
+
+  function feeLine(state, feeId) {
+    var found = null;
+    (state.items || []).forEach(function (item) {
+      if (!found && item.variant_id === feeId) found = item;
+    });
+    return found;
+  }
+
+  /* Brings the charge line into step with the wraps and resolves with
+     { state, changed }. `changed` is false when the cart was already correct,
+     which is the common case — the caller can then skip a pointless re-render.
+
+     The fee line is added with no properties so Shopify merges it with any
+     existing line of the same variant. That keeps it a single line, which is
+     what lets one change.js call set the whole charge. */
+  function syncFee(state) {
+    var feeId = feeVariantId();
+    if (!feeId) return Promise.resolve({ state: state, changed: false });
+
+    var wanted = wrappedUnits(state, feeId);
+    var line = feeLine(state, feeId);
+    var have = line ? line.quantity : 0;
+
+    if (have === wanted) return Promise.resolve({ state: state, changed: false });
+
+    var request = line
+      ? cartPost(route('cart_change_url', '/cart/change'), { id: line.key, quantity: wanted })
+      : cartPost(route('cart_add_url', '/cart/add') + '.js', { id: feeId, quantity: wanted });
+
+    return request.then(function (updated) {
+      return { state: updated, changed: true };
+    });
+  }
+
+  /* ---------------------------------------------------------------------- */
+  /* RECONCILE                                                               */
+  /* ---------------------------------------------------------------------- */
+
+  /* Removing a wrapped item, or changing its quantity, goes through Dawn's own
+     cart code and never touches this file — so the charge would be left over-
+     or under-stated. Re-deriving it from the cart covers every one of those
+     paths without having to hook each of them individually.
+
+     `state` is the caller's copy of the cart when it has one; most of Dawn's
+     cart code publishes the full change.js response, and reusing it saves a
+     round trip. Omit it and the cart is read fresh. */
+  function reconcile(state) {
+    if (!feeVariantId() || reconciling) return Promise.resolve();
+    reconciling = true;
+
+    var read = state
+      ? Promise.resolve(state)
+      : fetch(route('cart_url', '/cart') + '.js', {
+          headers: { Accept: 'application/json' }
+        }).then(function (res) {
+          return res.json();
+        });
+
+    return read
+      .then(syncFee)
+      .then(function (result) {
+        if (result.changed) applySections(result.state);
+      })
+      .catch(function (error) {
+        // Nothing the shopper can act on; the next cart change tries again.
+        console.error('[gift-wrap] could not reconcile the gift wrap charge', error);
+      })
+      .finally(function () {
+        reconciling = false;
+      });
   }
 
   function rowFor(line) {
@@ -299,13 +455,33 @@
     setRowBusy(line, true);
     setError('');
 
+    var wrapWritten = false;
+
     writeProperties(line, quantity, properties)
-      .then(function () {
+      .then(function (state) {
+        wrapWritten = true;
+        return syncFee(state);
+      })
+      .then(function (result) {
+        applySections(result.state);
         // closeModal(false): the row is genuinely wrapped now, so the tick stays.
         closeModal(false);
       })
       .catch(function (error) {
-        setError(error && error.message ? error.message : 'Could not save. Please try again.');
+        /* The charge failed after the wrap was written — most likely the fee
+           product is out of stock or unpublished. Take the wrap back off rather
+           than leave a cart that says "gift wrapped" and charges nothing. */
+        if (wrapWritten) {
+          writeProperties(line, quantity, propertySet('', '', ''))
+            .then(applySections)
+            .catch(function () {
+              /* Both writes failed; a reload is the only honest recovery, and
+                 the shopper is about to be told to try again anyway. */
+            });
+        }
+        setError(
+          error && error.message ? error.message : 'Could not save this. Please try again.'
+        );
         setRowBusy(line, false);
       })
       .finally(function () {
@@ -318,12 +494,18 @@
 
   function removeWrap(line, quantity) {
     setRowBusy(line, true);
-    writeProperties(line, quantity, propertySet('', '', '')).catch(function () {
-      // Put the tick back — the cart still has the wrap on it.
-      var checkbox = el('[data-gift-wrap-checkbox][data-line="' + line + '"]');
-      if (checkbox) checkbox.checked = true;
-      setRowBusy(line, false);
-    });
+
+    writeProperties(line, quantity, propertySet('', '', ''))
+      .then(syncFee)
+      .then(function (result) {
+        applySections(result.state);
+      })
+      .catch(function () {
+        // Put the tick back — the cart still has the wrap on it.
+        var checkbox = el('[data-gift-wrap-checkbox][data-line="' + line + '"]');
+        if (checkbox) checkbox.checked = true;
+        setRowBusy(line, false);
+      });
   }
 
   /* ---------------------------------------------------------------------- */
@@ -458,11 +640,47 @@
     document.body.appendChild(box);
   }
 
+  /* Liquid has already counted both sides of the charge for this render, so the
+     usual case — they agree — costs no request at all. They disagree only when
+     the cart was changed by something that does not know about wrapping, and
+     then it is worth the round trip to put the total right before the shopper
+     reads it. */
+  function reconcileIfStale() {
+    var box = config();
+    if (!box) return;
+    var current = Number(box.getAttribute('data-fee-current')) || 0;
+    var needed = Number(box.getAttribute('data-fee-needed')) || 0;
+    if (current !== needed) reconcile();
+  }
+
+  var subscribed = false;
+
   function init() {
     relocateModal();
     // The count starts from Liquid, but a browser restoring a typed value on
     // back-navigation would leave it stale.
     updateCount();
+    reconcileIfStale();
+
+    if (subscribed || typeof window.subscribe !== 'function') return;
+    var events = pubSubEvents();
+    if (!events) return;
+
+    // Quantity changes and removals from Dawn's own cart controls land here.
+    window.subscribe(events.cartUpdate, function (event) {
+      if (!event || event.source === 'gift-wrap') return;
+
+      var data = event.cartData;
+      /* A payload without an `items` array is /cart/add.js answering with the
+         line it just added, not the whole cart. Nothing the charge depends on
+         can have moved: add merges on properties as well as variant, so a plain
+         add never lands on a wrapped line. Skipping these keeps every
+         add-to-cart on the site from costing an extra request. */
+      if (data && !Array.isArray(data.items)) return;
+
+      reconcile(data || undefined);
+    });
+    subscribed = true;
   }
 
   if (document.readyState === 'loading') {

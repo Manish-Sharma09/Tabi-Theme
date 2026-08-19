@@ -7,6 +7,14 @@
 
 {{ 'quantity-popover.css' | asset_url | stylesheet_tag }}
 {{ 'component-card.css' | asset_url | stylesheet_tag }}
+{%- comment -%}
+  The drawer renders on every template, and both the gift wrap link below and
+  the charge row's styling need this — so it is loaded unconditionally and up
+  here, rather than beside the markup that uses it. A stylesheet linked halfway
+  down the body still applies to the whole document, but not before the rows
+  above it have already been painted with the controls it hides.
+{%- endcomment -%}
+{{ 'gift-wrap.css' | asset_url | stylesheet_tag }}
 
 <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 <script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
@@ -117,8 +125,27 @@
                   </thead>
 
                   <tbody role="rowgroup">
+                    {%- comment -%}
+                      The gift wrap charge is derived from the wrap selections,
+                      so its quantity is not the shopper's to edit here either —
+                      gift-wrap.css hides the stepper and the remove button on
+                      this row. Without the class the drawer would offer two
+                      controls that the next sync simply undoes.
+                    {%- endcomment -%}
                     {%- for item in cart.items -%}
-                      <tr id="CartDrawer-Item-{{ item.index | plus: 1 }}" class="cart-item" role="row">
+                      {%- liquid
+                        assign is_fee_line = false
+                        if settings.gift_wrap_product != blank
+                          if item.product.id == settings.gift_wrap_product.id
+                            assign is_fee_line = true
+                          endif
+                        endif
+                      -%}
+                      <tr
+                        id="CartDrawer-Item-{{ item.index | plus: 1 }}"
+                        class="cart-item{% if is_fee_line %} cart-item--gift-wrap-fee{% endif %}"
+                        role="row"
+                      >
                         <td class="cart-item__media" role="cell" headers="CartDrawer-ColumnProductImage">
                           {% if item.image %}
                             {% comment %} Leave empty space due to a:empty CSS display: none rule {% endcomment %}
@@ -278,6 +305,9 @@
                           role="cell"
                           headers="CartDrawer-ColumnQuantity"
                         >
+                          {%- if is_fee_line -%}
+                            <p class="gift-wrap-fee__quantity">&times; {{ item.quantity }}</p>
+                          {%- endif -%}
                           <quantity-popover>
                             <div class="cart-item__quantity-wrapper quantity-popover-wrapper">
                               <div class="quantity-popover-container{% if has_qty_rules or has_vol_pricing %} quantity-popover-container--hover{% endif %}">
@@ -552,11 +582,8 @@
           cart page already lists every item, which is exactly the surface this
           needs.
 
-          The stylesheet is loaded by the cart page section, so it is pulled in
-          here too — the drawer renders on every template, not just /cart.
         {%- endcomment -%}
         {%- if cart.item_count > 0 -%}
-          {{ 'gift-wrap.css' | asset_url | stylesheet_tag }}
           <div class="gift-wrap-cta">
             <span class="gift-wrap-cta__icon">{%- render 'gift-wrap-icon' -%}</span>
             <p class="gift-wrap-cta__text">

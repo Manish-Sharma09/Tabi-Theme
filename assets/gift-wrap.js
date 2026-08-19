@@ -432,11 +432,45 @@
     }
   });
 
-  // The count label starts from Liquid, but a browser restoring a typed value
-  // on back-navigation would leave it stale.
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', updateCount);
-  } else {
+  /* ---------------------------------------------------------------------- */
+  /* INIT                                                                    */
+  /* ---------------------------------------------------------------------- */
+
+  /* Move the dialog to <body>.
+
+     A fixed-position modal is only reliably on top if no ancestor opens a
+     stacking context. The Liquid already renders it outside <cart-items> (which
+     carries Dawn's `.isolate`), but any wrapper added later — a transform, a
+     filter, another `isolation: isolate` — would trap it again and let page
+     content paint over it. Re-parenting to <body> removes the whole class of
+     bug rather than chasing each instance.
+
+     The theme editor re-renders sections, which would inject a second copy, so
+     any previous one is discarded first. */
+  function relocateModal() {
+    var box = modal();
+    if (!box || box.parentNode === document.body) return;
+
+    document.querySelectorAll('body > #GiftWrapModal').forEach(function (stale) {
+      if (stale !== box) stale.remove();
+    });
+
+    document.body.appendChild(box);
+  }
+
+  function init() {
+    relocateModal();
+    // The count starts from Liquid, but a browser restoring a typed value on
+    // back-navigation would leave it stale.
     updateCount();
   }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+  // Theme editor: a re-rendered cart section brings a fresh modal with it.
+  document.addEventListener('shopify:section:load', init);
 })();

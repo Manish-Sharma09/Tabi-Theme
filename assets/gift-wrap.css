@@ -175,14 +175,31 @@
   display: none;
 }
 
+/* Flat black, not rgba(var(--color-foreground), …).
+
+   Scheme variables are declared on whichever element carries the color-scheme
+   class. gift-wrap.js re-parents this dialog to <body>, which is outside all of
+   them, so any var() here would resolve to nothing and the scrim would come out
+   fully transparent. A literal colour cannot fail that way — and a backdrop
+   should read the same regardless of the cart section's colour scheme. */
 .gift-wrap-modal__overlay {
   position: absolute;
   inset: 0;
-  background: rgba(var(--color-foreground), 0.45);
+  background: rgba(0, 0, 0, 0.6);
   animation: giftWrapFade 0.2s ease-out;
 }
 
+/* The dialog sets the scheme variables itself instead of inheriting them.
+
+   Everything below still reads --color-foreground / --color-background, so the
+   panel's internals did not have to change — but with the modal re-parented to
+   <body> those variables are no longer in scope, so they are re-declared here
+   with the theme's own defaults as the fallback. */
 .gift-wrap-modal__dialog {
+  --color-foreground: 18, 18, 18;
+  --color-background: 255, 255, 255;
+  --color-shadow: 18, 18, 18;
+
   position: relative;
   display: flex;
   flex-direction: column;

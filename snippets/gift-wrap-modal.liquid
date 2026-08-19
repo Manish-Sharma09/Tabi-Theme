@@ -63,6 +63,15 @@
                 {%- liquid
                   assign wrap_name = block.settings.name | default: 'Gift wrap' | strip
                   assign input_id = 'GiftWrap-' | append: block.id
+
+                  # A picked file wins; a pasted CDN link is the fallback for
+                  # images that are not in the theme's Files.
+                  assign wrap_image = ''
+                  if block.settings.image
+                    assign wrap_image = block.settings.image | image_url: width: 640
+                  elsif block.settings.image_url != blank
+                    assign wrap_image = block.settings.image_url
+                  endif
                 -%}
                 <div class="gift-wrap-option" {{ block.shopify_attributes }}>
                   <label class="gift-wrap-option__label" for="{{ input_id }}">
@@ -72,22 +81,22 @@
                       id="{{ input_id }}"
                       name="gift_wrap_option"
                       value="{{ wrap_name | escape }}"
-                      {% if block.settings.image %}
-                        data-wrap-image="{{ block.settings.image | image_url: width: 480 }}"
-                      {% endif %}
+                      data-wrap-image="{{ wrap_image }}"
                     >
                     <span class="gift-wrap-option__radio" aria-hidden="true"></span>
                     <span class="gift-wrap-option__body">
                       <span class="gift-wrap-option__figure">
-                        {%- if block.settings.image -%}
-                          <img
-                            src="{{ block.settings.image | image_url: width: 480 }}"
-                            alt="{{ wrap_name | escape }}"
-                            width="{{ block.settings.image.width }}"
-                            height="{{ block.settings.image.height }}"
-                            loading="lazy"
-                            class="cf-img-fluid"
-                          >
+                        {%- if wrap_image != blank -%}
+                          {%- comment -%}
+                            theme-check-disable ImgWidthAndHeight
+                            No width/height attributes on purpose: a pasted URL
+                            has no dimensions to read. The stylesheet pins these
+                            to aspect-ratio 4 / 3 with object-fit: cover, so the
+                            box is reserved before the image lands either way
+                            and there is no layout shift to prevent.
+                          {%- endcomment -%}
+                          <img src="{{ wrap_image }}" alt="{{ wrap_name | escape }}" loading="lazy">
+                          {%- comment -%}theme-check-enable ImgWidthAndHeight{%- endcomment -%}
                         {%- else -%}
                           {{ 'product-1' | placeholder_svg_tag: 'placeholder-svg' }}
                         {%- endif -%}

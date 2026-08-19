@@ -461,20 +461,31 @@
       </p>
     </form>
 
-    {%- comment -%}
-      Deliberately outside .js-contents. cart.js replaces that block's innerHTML
-      after every cart update, which would tear the open dialog out of the page
-      mid-interaction. One modal serves every row; gift-wrap.js points it at
-      whichever line was clicked.
-    {%- endcomment -%}
-    {%- if section.settings.enable_gift_wrap and cart != empty -%}
-      {%- render 'gift-wrap-modal',
-        wrap_blocks: section.blocks,
-        details: section.settings.gift_wrap_details
-      -%}
-    {%- endif -%}
   </div>
 </cart-items>
+
+{%- comment -%}
+  The modal lives OUTSIDE <cart-items> for two reasons.
+
+  1. Stacking. <cart-items> carries Dawn's `.isolate`, which is
+     `position: relative; z-index: 0` — a stacking context. Anything inside it
+     is capped at that level no matter how high its own z-index goes, so the
+     main-cart-footer section (later in the document) painted its Estimated
+     total and Check out button straight over the open dialog.
+
+  2. Re-renders. cart.js replaces the innerHTML of .js-contents after every cart
+     update, which would tear the dialog out of the page mid-interaction.
+
+  gift-wrap.js additionally relocates this to <body> on load, so it escapes any
+  ancestor stacking context that gets introduced later. One modal serves every
+  row; the script points it at whichever line was clicked.
+{%- endcomment -%}
+{%- if section.settings.enable_gift_wrap and cart != empty -%}
+  {%- render 'gift-wrap-modal',
+    wrap_blocks: section.blocks,
+    details: section.settings.gift_wrap_details
+  -%}
+{%- endif -%}
 
 {% schema %}
 {
@@ -497,6 +508,12 @@
           "id": "image",
           "label": "Image",
           "info": "A photo of the paper and ribbon. Landscape crops best."
+        },
+        {
+          "type": "text",
+          "id": "image_url",
+          "label": "Image URL",
+          "info": "Only needed when the file is not in Files and you have a direct Shopify CDN link. The picker above always wins if both are set."
         }
       ]
     }

@@ -12,25 +12,36 @@
         "gift-wrap-1": {
           "type": "gift_wrap_option",
           "settings": {
-            "name": "Classic Kraft"
+            "name": "Boat Wrap Silver",
+            "image_url": "https://cdn.shopify.com/s/files/1/0515/5920/3012/files/BoatWrapSilver.jpg?v=1787130654"
           }
         },
         "gift-wrap-2": {
           "type": "gift_wrap_option",
           "settings": {
-            "name": "Block Print Ivory"
+            "name": "Bicycle Wrap Silver",
+            "image_url": "https://cdn.shopify.com/s/files/1/0515/5920/3012/files/BicycleWrapSilver.jpg?v=1787130654"
           }
         },
         "gift-wrap-3": {
           "type": "gift_wrap_option",
           "settings": {
-            "name": "Indigo Stripe"
+            "name": "Balloon Wrap Silver",
+            "image_url": "https://cdn.shopify.com/s/files/1/0515/5920/3012/files/BalloonWrapSilver.jpg?v=1787130654"
           }
         },
         "gift-wrap-4": {
           "type": "gift_wrap_option",
           "settings": {
-            "name": "Festive Gold"
+            "name": "Ele Wrap",
+            "image_url": "https://cdn.shopify.com/s/files/1/0515/5920/3012/files/Ele_Wrap.jpg?v=1787130705"
+          }
+        },
+        "gift-wrap-5": {
+          "type": "gift_wrap_option",
+          "settings": {
+            "name": "Wrapping Strip Sheet",
+            "image_url": "https://cdn.shopify.com/s/files/1/0515/5920/3012/files/wrapping_strip_sheet.jpg?v=1787130758"
           }
         }
       },
@@ -38,7 +49,8 @@
         "gift-wrap-1",
         "gift-wrap-2",
         "gift-wrap-3",
-        "gift-wrap-4"
+        "gift-wrap-4",
+        "gift-wrap-5"
       ]
     },
     "cart-footer": {
@@ -51,13 +63,11 @@
       "blocks": {
         "subtotal": {
           "type": "subtotal",
-          "settings": {
-          }
+          "settings": {}
         },
         "buttons": {
           "type": "buttons",
-          "settings": {
-          }
+          "settings": {}
         }
       },
       "block_order": [

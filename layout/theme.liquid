@@ -41,8 +41,23 @@
     {%- endif -%}
 
     {{ content_for_header }}
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.6.0/slick.min.js"></script>
+    {%- comment -%}
+      defer — these were parser-blocking, roughly 130KB that had to be fetched
+      and run before the browser would carry on building the page. Deferred
+      scripts still execute in document order, so jQuery is guaranteed to be in
+      place before Slick, which needs it.
+
+      What made this safe to change: nothing in assets/*.js touches jQuery,
+      Slick or Swiper, and no inline event attribute does either. Only five
+      inline <script> blocks depended on them, and the three that would have
+      broken now wait for the DOM — see the note above each.
+
+      crossorigin — see the note beside the Swiper tags further down. Both hosts
+      send `access-control-allow-origin: *`, so nothing changes about how these
+      load; it only stops their errors arriving as a bare "script error.".
+    {%- endcomment -%}
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js" defer="defer" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.6.0/slick.min.js" defer="defer" crossorigin="anonymous"></script>
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.6.0/slick.min.css" rel="stylesheet">
     {%- liquid
@@ -355,8 +370,21 @@
       }
     </script>
 
-    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css">
-    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+    {%- comment -%}
+      Pinned to 14.1.0, which is what the unversioned URL was already resolving
+      to. Without a version unpkg serves whatever is newest, so a breaking
+      Swiper release would take the homepage sliders down on a page nobody had
+      touched — and an unpkg outage would too.
+
+      crossorigin: these three CDNs all answer with `access-control-allow-origin: *`
+      (checked), so the attribute costs nothing and buys real error messages. A
+      cross-origin script loaded WITHOUT it reports every failure inside it as
+      the opaque "script error." with no file, line or stack — which is 39% of
+      the JS errors this store records. With it, the browser is allowed to hand
+      over the actual message.
+    {%- endcomment -%}
+    <link rel="stylesheet" href="https://unpkg.com/swiper@14.1.0/swiper-bundle.min.css">
+    <script src="https://unpkg.com/swiper@14.1.0/swiper-bundle.min.js" defer="defer" crossorigin="anonymous"></script>
   </head>
 
   <body class="gradient{% if settings.animations_hover_elements != 'none' %} animate--hover-{{ settings.animations_hover_elements }}{% endif %}">

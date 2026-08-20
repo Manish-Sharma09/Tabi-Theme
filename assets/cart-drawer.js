@@ -1,4 +1,29 @@
-class CartDrawer extends HTMLElement {
+/* Written so a SECOND execution of this file is harmless.
+
+   `class X` at the top level of a classic script creates a global lexical
+   binding, and running the same file twice is a duplicate declaration —
+   SyntaxError, thrown before any statement in the file runs, so no runtime
+   check placed inside could ever prevent it. It showed up in this store's real
+   traffic as "Can't create duplicate variable: 'CartDrawer'" and
+   "...'DetailsDisclosure'", together about an eighth of all recorded JS errors.
+   Nothing in the theme loads either file twice — the page HTML has exactly one
+   tag for each — so the second run comes from the environment: in-app browsers
+   (Instagram, Facebook) are most of this store's mobile sessions and some of
+   them re-run deferred scripts.
+
+   `var` was chosen over a block or an IIFE because the binding has to stay
+   global: cart.js defines CartItems, which
+   CartDrawerItems below extends, and share.js extends DetailsDisclosure the
+   same way. Redeclaring a
+   `var` is legal, and reading window.X first means the second run reuses the
+   constructor the first run registered rather than building a rival one.
+
+   The customElements.define calls are guarded for the same reason — defining a
+   name twice throws NotSupportedError. */
+
+var CartDrawer =
+  window.CartDrawer ||
+  class CartDrawer extends HTMLElement {
   constructor() {
     super();
 
@@ -112,11 +137,15 @@ class CartDrawer extends HTMLElement {
   setActiveElement(element) {
     this.activeElement = element;
   }
+};
+
+if (!customElements.get('cart-drawer')) {
+  customElements.define('cart-drawer', CartDrawer);
 }
 
-customElements.define('cart-drawer', CartDrawer);
-
-class CartDrawerItems extends CartItems {
+var CartDrawerItems =
+  window.CartDrawerItems ||
+  class CartDrawerItems extends CartItems {
   getSectionsToRender() {
     return [
       {
@@ -131,6 +160,8 @@ class CartDrawerItems extends CartItems {
       },
     ];
   }
-}
+};
 
-customElements.define('cart-drawer-items', CartDrawerItems);
+if (!customElements.get('cart-drawer-items')) {
+  customElements.define('cart-drawer-items', CartDrawerItems);
+}

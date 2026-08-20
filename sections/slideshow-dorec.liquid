@@ -492,46 +492,63 @@
 {% endschema %}
 
 
+{%- comment -%}
+  Wrapped because jQuery is loaded with `defer` now, so `$` does not exist yet
+  while this inline script is being parsed. Inline scripts run during parsing;
+  deferred ones run after it. `$(document).ready(...)` was no protection — it
+  calls `$` immediately in order to register the callback.
+
+  The readyState test rather than a bare DOMContentLoaded listener: the theme
+  editor re-runs this script when the section reloads, and by then that event
+  has long since fired, so a listener alone would never be called and the
+  slider would stay dead until a full refresh.
+{%- endcomment -%}
 <script>
- $(document).ready(function() {
-  var $slider = $('#slider_{{ section.id }}');
-  var $slides = $slider.find('.newslideshow-item');
-  
-  if ($slides.length === 1) {
-    // If there's only one image, show it without initializing Slick
-    $slider.css('visibility', 'visible').css('opacity', '1');
-    $slides.css('display', 'block');
-  } else {
-    let imagesLoaded = 0;
-    const totalImages = $slides.length;
+  (function () {
+    function init() {
+      var $slider = $('#slider_{{ section.id }}');
+      var $slides = $slider.find('.newslideshow-item');
 
-    $slides.find('img').each(function() {
-      $(this).on('load', function() {
-        imagesLoaded++;
-        if (imagesLoaded === totalImages) {
-          initializeSlider();
+      if ($slides.length === 1) {
+        // If there's only one image, show it without initializing Slick
+        $slider.css('visibility', 'visible').css('opacity', '1');
+        $slides.css('display', 'block');
+      } else {
+        let imagesLoaded = 0;
+        const totalImages = $slides.length;
+
+        $slides.find('img').each(function() {
+          $(this).on('load', function() {
+            imagesLoaded++;
+            if (imagesLoaded === totalImages) {
+              initializeSlider();
+            }
+          }).attr('src', $(this).attr('src')); // Ensure image loads
+        });
+
+        function initializeSlider() {
+          $slider.slick({
+            arrows: {{ section.settings.slider }},
+            infinite: true,
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            autoplay: true,
+            dots: {{ section.settings.slider-dot }},
+            autoplaySpeed: 5000,
+            fade: true,
+            cssEase: 'linear'
+          });
+
+          $slider.css('visibility', 'visible').css('opacity', '1');
+          $slides.css('display', 'block');
         }
-      }).attr('src', $(this).attr('src')); // Ensure image loads
-    });
-
-    function initializeSlider() {
-      $slider.slick({
-        arrows: {{ section.settings.slider }},
-        infinite: true,
-        slidesToShow: 1,
-        slidesToScroll: 1,
-        autoplay: true,
-        dots: {{ section.settings.slider-dot }},
-        autoplaySpeed: 5000,
-        fade: true,
-        cssEase: 'linear'
-      });
-
-      $slider.css('visibility', 'visible').css('opacity', '1');
-      $slides.css('display', 'block');
+      }
     }
-  }
-});
 
-
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
 </script>

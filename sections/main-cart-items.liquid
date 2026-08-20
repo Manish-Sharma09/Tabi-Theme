@@ -80,7 +80,17 @@
   <script src="{{ 'cart.js' | asset_url }}" defer="defer"></script>
 {%- endunless -%}
 
-<script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
+{%- comment -%}
+  Same test cart.js above gets, and for the same reason. With the drawer as the
+  cart type, snippets/cart-drawer.liquid loads this from the layout on every
+  template — including /cart — so loading it here as well put two tags for it on
+  the cart page and ran the file twice. It happens to survive that (it wraps its
+  own class in a customElements.get check) but there is no reason to pay for the
+  second parse.
+{%- endcomment -%}
+{%- unless settings.cart_type == 'drawer' -%}
+  <script src="{{ 'quantity-popover.js' | asset_url }}" defer="defer"></script>
+{%- endunless -%}
 
 <cart-items class="gradient color-{{ section.settings.color_scheme }} isolate{% if cart == empty %} is-empty{% else %} section-{{ section.id }}-padding{% endif %}">
   <div class="page-width">

@@ -808,19 +808,38 @@
   </div>
 </product-info>
 
+{%- comment -%}
+  Wrapped because jQuery is loaded with `defer` now, so `$` does not exist yet
+  while this inline script is being parsed. Inline scripts run during parsing;
+  deferred ones run after it. `$(document).ready(...)` was no protection — it
+  calls `$` immediately in order to register the callback.
+
+  The readyState test rather than a bare DOMContentLoaded listener: the theme
+  editor re-runs this script when the section reloads, and by then that event
+  has long since fired, so a listener alone would never be called and the
+  slider would stay dead until a full refresh.
+{%- endcomment -%}
 <script>
-    $(window).scroll(function() {
-      // Code from websensepro.com
-      //After scrolling 300px from the top...
-      if ( $(window).scrollTop() >= 300 ) {
+  (function () {
+    function init() {
+      $(window).scroll(function () {
+        // Code from websensepro.com
+        // After scrolling 300px from the top...
+        if ($(window).scrollTop() >= 300) {
           $('.sticky-button').css('position', 'fixed');
-
-      //Otherwise remove inline styles and thereby revert to original stying
-      } else {
+          // Otherwise remove inline styles and thereby revert to original stying
+        } else {
           $('.sticky-button').attr('style', '');
+        }
+      });
+    }
 
-      }
-  });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })();
 </script>
 
 {% schema %}
